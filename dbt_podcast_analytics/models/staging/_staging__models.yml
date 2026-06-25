@@ -1,0 +1,44 @@
+version: 2
+
+models:
+  - name: stg_rss__episodes
+    description: "Cleaned RSS episode-level data; one row per episode."
+    columns:
+      - name: episode_key
+        description: "Surrogate key (hash of episode_id)"
+        tests:
+          - not_null
+          - unique
+      - name: episode_id
+        tests:
+          - not_null
+          - unique
+      - name: podcast_id
+        description: "FK to the podcast (hash of feed_url; matches dim_podcast)"
+        tests:
+          - not_null
+      - name: duration_seconds
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 1
+              max_value: 36000
+
+  - name: stg_listening__events
+    description: "Cleaned listening events; one row per event."
+    columns:
+      - name: event_id
+        tests:
+          - not_null
+          - unique
+      - name: episode_id
+        tests:
+          - not_null
+      - name: event_type
+        tests:
+          - accepted_values:
+              values: ['play', 'pause', 'skip', 'complete', 'download']
+      - name: completion_fraction
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 1

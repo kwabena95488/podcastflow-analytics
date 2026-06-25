@@ -1,0 +1,9 @@
+# Minimal dependencies for the live BigQuery dashboard (app.py).
+# Reads the dbt gold layer directly from BigQuery via Application Default Credentials.
+# (The legacy/experimental ML dashboard's heavier deps live in requirements.txt.)
+streamlit>=1.29
+plotly>=5.17
+pandas>=2.0
+google-cloud-bigquery>=3.13
+db-dtypes>=1.1
+pyarrow>=14

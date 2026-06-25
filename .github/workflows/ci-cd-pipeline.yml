@@ -1,0 +1,486 @@
+name: PodcastFlow Analytics CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  release:
+    types: [ published ]
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  REGION: us-central1
+  REGISTRY: gcr.io
+
+jobs:
+  # Code Quality and Linting
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+          
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install flake8 black isort mypy bandit safety
+        
+    - name: Run code formatting check (Black)
+      run: black --check --diff .
+      
+    - name: Run import sorting check (isort)
+      run: isort --check-only --diff .
+      
+    - name: Run linting (flake8)
+      run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+      
+    - name: Run type checking (mypy)
+      run: mypy . --ignore-missing-imports
+      continue-on-error: true
+      
+    - name: Run security analysis (bandit)
+      run: bandit -r . -f json -o bandit-report.json
+      continue-on-error: true
+      
+    - name: Run dependency vulnerability scan (safety)
+      run: safety check --json --output safety-report.json
+      continue-on-error: true
+      
+    - name: Upload security reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-reports
+        path: |
+          bandit-report.json
+          safety-report.json
+
+  # Unit Tests
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: code-quality
+    strategy:
+      matrix:
+        python-version: [3.8, 3.9, '3.10']
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-${{ matrix.python-version }}-
+          ${{ runner.os }}-pip-
+          
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov pytest-xdist pytest-mock
+        
+    - name: Run unit tests
+      run: |
+        pytest tests/unit/ \
+          --cov=. \
+          --cov-report=xml \
+          --cov-report=html \
+          --cov-report=term \
+          --junit-xml=junit-results.xml \
+          -v \
+          --tb=short \
+          -n auto
+          
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results-${{ matrix.python-version }}
+        path: |
+          junit-results.xml
+          htmlcov/
+          coverage.xml
+          
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unit-tests
+        name: codecov-umbrella
+
+  # Integration Tests
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: testdb
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-asyncio
+        
+    - name: Set up test environment
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
+        BIGQUERY_EMULATOR_HOST: localhost:9050
+      run: |
+        echo "Setting up test environment"
+        
+    - name: Run integration tests
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
+        ENVIRONMENT: test
+      run: |
+        pytest tests/integration/ \
+          --junit-xml=integration-results.xml \
+          -v \
+          --tb=short
+          
+    - name: Upload integration test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: integration-test-results
+        path: integration-results.xml
+
+  # Performance Tests
+  performance-tests:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    needs: integration-tests
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-benchmark psutil
+        
+    - name: Run performance tests
+      run: |
+        pytest tests/performance/ \
+          -m performance \
+          --benchmark-json=benchmark-results.json \
+          --junit-xml=performance-results.xml \
+          -v
+          
+    - name: Upload performance test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: performance-test-results
+        path: |
+          benchmark-results.json
+          performance-results.xml
+
+  # Security Scanning
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    needs: code-quality
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  # Build and Test Docker Image
+  build-image:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests]
+    outputs:
+      image-tag: ${{ steps.image-tag.outputs.tag }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Generate image tag
+      id: image-tag
+      run: |
+        if [[ "${{ github.event_name }}" == "release" ]]; then
+          echo "tag=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+        else
+          echo "tag=${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
+        fi
+        
+    - name: Build Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile.cloud
+        push: false
+        tags: |
+          ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/podcastflow-dashboard:${{ steps.image-tag.outputs.tag }}
+          ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/podcastflow-dashboard:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        
+    - name: Test Docker image
+      run: |
+        # Build and run basic smoke test of the container
+        docker build -t test-image .
+        docker run --rm --name test-container -d -p 8080:8080 test-image
+        sleep 10
+        curl -f http://localhost:8080/health || exit 1
+        docker stop test-container
+
+  # Deploy to Staging
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [build-image, security-scan]
+    if: github.ref == 'refs/heads/develop'
+    environment: staging
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v1
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+        
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1
+      with:
+        project_id: ${{ env.PROJECT_ID }}
+        
+    - name: Configure Docker for GCR
+      run: gcloud auth configure-docker
+      
+    - name: Build and push Docker image
+      run: |
+        docker build -t ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/podcastflow-dashboard:${{ needs.build-image.outputs.image-tag }} .
+        docker push ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/podcastflow-dashboard:${{ needs.build-image.outputs.image-tag }}
+        
+    - name: Deploy to Cloud Run (Staging)
+      run: |
+        gcloud run deploy podcastflow-dashboard-staging \
+          --image ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/podcastflow-dashboard:${{ needs.build-image.outputs.image-tag }} \
+          --platform managed \
+          --region ${{ env.REGION }} \
+          --allow-unauthenticated \
+          --memory 2Gi \
+          --cpu 2 \
+          --min-instances 1 \
+          --max-instances 10 \
+          --set-env-vars "ENVIRONMENT=staging,PROJECT_ID=${{ env.PROJECT_ID }}"
+          
+    - name: Run smoke tests against staging
+      run: |
+        STAGING_URL=$(gcloud run services describe podcastflow-dashboard-staging --region=${{ env.REGION }} --format='value(status.url)')
+        curl -f "$STAGING_URL/health" || exit 1
+
+  # Deploy to Production
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build-image, deploy-staging, performance-tests]
+    if: github.event_name == 'release' && github.event.action == 'published'
+    environment: production
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v1
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+        
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1
+      with:
+        project_id: ${{ env.PROJECT_ID }}
+        
+    - name: Configure Docker for GCR
+      run: gcloud auth configure-docker
+      
+    - name: Build and push Docker image
+      run: |
+        docker build -t ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/podcastflow-dashboard:${{ needs.build-image.outputs.image-tag }} .
+        docker build -t ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/podcastflow-dashboard:latest .
+        docker push ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/podcastflow-dashboard:${{ needs.build-image.outputs.image-tag }}
+        docker push ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/podcastflow-dashboard:latest
+        
+    - name: Deploy to Cloud Run (Production)
+      run: |
+        gcloud run deploy podcastflow-dashboard \
+          --image ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/podcastflow-dashboard:${{ needs.build-image.outputs.image-tag }} \
+          --platform managed \
+          --region ${{ env.REGION }} \
+          --allow-unauthenticated \
+          --memory 4Gi \
+          --cpu 2 \
+          --min-instances 2 \
+          --max-instances 50 \
+          --set-env-vars "ENVIRONMENT=production,PROJECT_ID=${{ env.PROJECT_ID }}" \
+          --traffic 100
+          
+    - name: Run production health checks
+      run: |
+        PROD_URL=$(gcloud run services describe podcastflow-dashboard --region=${{ env.REGION }} --format='value(status.url)')
+        
+        # Health check
+        curl -f "$PROD_URL/health" || exit 1
+        
+        # Basic functionality test
+        curl -f "$PROD_URL/api/v1/health" || exit 1
+        
+    - name: Create deployment notification
+      run: |
+        echo "✅ Successfully deployed PodcastFlow Analytics to production!"
+        echo "🔗 Production URL: $PROD_URL"
+        echo "📦 Image: ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/podcastflow-dashboard:${{ needs.build-image.outputs.image-tag }}"
+
+  # Cleanup
+  cleanup:
+    name: Cleanup Old Images
+    runs-on: ubuntu-latest
+    needs: [deploy-production]
+    if: always()
+    steps:
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v1
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+        
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1
+      with:
+        project_id: ${{ env.PROJECT_ID }}
+        
+    - name: Cleanup old container images
+      run: |
+        # Keep only the latest 10 images
+        gcloud container images list-tags ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/podcastflow-dashboard \
+          --limit=999999 \
+          --sort-by=TIMESTAMP \
+          --format="get(digest)" | tail -n +11 | \
+        while read digest; do
+          gcloud container images delete "${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/podcastflow-dashboard@$digest" --force-delete-tags --quiet
+        done
+
+  # Post-deployment monitoring
+  post-deployment:
+    name: Post-deployment Monitoring
+    runs-on: ubuntu-latest
+    needs: [deploy-production]
+    if: github.event_name == 'release'
+    steps:
+    - name: Set up monitoring alerts
+      run: |
+        echo "Setting up post-deployment monitoring..."
+        # This would typically set up monitoring dashboards and alerts
+        
+    - name: Send deployment notification
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#deployments'
+        text: |
+          🚀 PodcastFlow Analytics deployed to production!
+          📦 Version: ${{ github.event.release.tag_name }}
+          👤 Deployed by: ${{ github.actor }}
+          🔗 Release: ${{ github.event.release.html_url }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      if: always()
+
+# Job matrix for comprehensive testing
+  test-matrix:
+    name: Test Matrix
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: [3.8, 3.9, '3.10']
+        exclude:
+          # Exclude some combinations to reduce CI time
+          - os: windows-latest
+            python-version: 3.8
+          - os: macos-latest
+            python-version: 3.8
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest
+        
+    - name: Run basic tests
+      run: |
+        pytest tests/unit/ -k "not slow" --tb=short -v 

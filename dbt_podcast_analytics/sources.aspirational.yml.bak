@@ -1,0 +1,266 @@
+version: 2
+
+sources:
+  - name: bronze_rss
+    description: "Raw RSS feed data from podcast sources"
+    schema: bronze
+    tables:
+      - name: rss_feeds
+        description: "Raw RSS feed metadata and episode information"
+        columns:
+          - name: feed_url
+            description: "RSS feed URL"
+            tests:
+              - not_null
+              - unique
+          - name: title
+            description: "Podcast title from RSS"
+          - name: description
+            description: "Podcast description"
+          - name: published_date
+            description: "Episode publish date"
+            tests:
+              - not_null
+          - name: raw_content
+            description: "Raw RSS XML content"
+          - name: ingestion_timestamp
+            description: "When the data was ingested"
+            tests:
+              - not_null
+          - name: source_type
+            description: "Type of RSS source"
+            
+      - name: rss_episodes
+        description: "Individual episode data from RSS feeds"
+        columns:
+          - name: episode_id
+            description: "Unique episode identifier"
+            tests:
+              - not_null
+              - unique
+          - name: podcast_id
+            description: "Parent podcast identifier"
+            tests:
+              - not_null
+          - name: title
+            description: "Episode title"
+          - name: description
+            description: "Episode description"
+          - name: duration_seconds
+            description: "Episode duration in seconds"
+            tests:
+              - dbt_expectations.expect_column_values_to_be_between:
+                  min_value: 60
+                  max_value: 18000
+          - name: published_date
+            description: "Episode publication date"
+            tests:
+              - not_null
+
+  - name: bronze_spotify
+    description: "Raw data from Spotify Podcasts API"
+    schema: bronze
+    tables:
+      - name: spotify_shows
+        description: "Podcast show data from Spotify API"
+        columns:
+          - name: show_id
+            description: "Spotify show ID"
+            tests:
+              - not_null
+              - unique
+          - name: name
+            description: "Show name"
+          - name: description
+            description: "Show description"
+          - name: publisher
+            description: "Show publisher"
+          - name: total_episodes
+            description: "Total number of episodes"
+          - name: explicit
+            description: "Explicit content flag"
+          - name: languages
+            description: "Show languages"
+          - name: api_response_timestamp
+            description: "API response timestamp"
+            
+      - name: spotify_episodes
+        description: "Episode data from Spotify API"
+        columns:
+          - name: episode_id
+            description: "Spotify episode ID"
+            tests:
+              - not_null
+              - unique
+          - name: show_id
+            description: "Parent show ID"
+            tests:
+              - not_null
+          - name: name
+            description: "Episode name"
+          - name: description
+            description: "Episode description"
+          - name: duration_ms
+            description: "Episode duration in milliseconds"
+          - name: release_date
+            description: "Episode release date"
+          - name: explicit
+            description: "Explicit content flag"
+
+  - name: bronze_apple
+    description: "Raw data from Apple Podcasts API"
+    schema: bronze
+    tables:
+      - name: apple_podcasts
+        description: "Podcast data from Apple Podcasts API"
+        columns:
+          - name: collection_id
+            description: "Apple collection ID"
+            tests:
+              - not_null
+              - unique
+          - name: track_name
+            description: "Podcast name"
+          - name: artist_name
+            description: "Artist/creator name"
+          - name: genre_ids
+            description: "Genre identifiers"
+          - name: primary_genre_name
+            description: "Primary genre"
+          - name: track_count
+            description: "Number of episodes"
+          - name: country
+            description: "Country code"
+          - name: content_advisory_rating
+            description: "Content rating"
+            
+      - name: apple_reviews
+        description: "Podcast reviews from Apple Podcasts"
+        columns:
+          - name: review_id
+            description: "Unique review identifier"
+            tests:
+              - not_null
+              - unique
+          - name: collection_id
+            description: "Podcast collection ID"
+            tests:
+              - not_null
+          - name: rating
+            description: "Review rating (1-5)"
+            tests:
+              - dbt_expectations.expect_column_values_to_be_between:
+                  min_value: 1
+                  max_value: 5
+          - name: title
+            description: "Review title"
+          - name: content
+            description: "Review content"
+          - name: author
+            description: "Review author"
+          - name: date
+            description: "Review date"
+
+  - name: bronze_events
+    description: "Real-time streaming events from Kafka"
+    schema: bronze
+    tables:
+      - name: listening_events
+        description: "User listening behavior events"
+        columns:
+          - name: event_id
+            description: "Unique event identifier"
+            tests:
+              - not_null
+              - unique
+          - name: user_id
+            description: "User identifier"
+            tests:
+              - not_null
+          - name: episode_id
+            description: "Episode being listened to"
+            tests:
+              - not_null
+          - name: session_id
+            description: "Listening session ID"
+          - name: timestamp
+            description: "Event timestamp"
+            tests:
+              - not_null
+          - name: event_type
+            description: "Type of listening event"
+            tests:
+              - accepted_values:
+                  values: ['play', 'pause', 'skip', 'complete', 'download']
+          - name: position_seconds
+            description: "Position in episode when event occurred"
+          - name: completion_percentage
+            description: "Percentage of episode completed"
+            tests:
+              - dbt_expectations.expect_column_values_to_be_between:
+                  min_value: 0
+                  max_value: 100
+          - name: platform
+            description: "Listening platform"
+          - name: device_type
+            description: "Device type used"
+          - name: location_country
+            description: "User country"
+            
+      - name: social_mentions
+        description: "Social media mentions and engagement"
+        columns:
+          - name: mention_id
+            description: "Unique mention identifier"
+            tests:
+              - not_null
+              - unique
+          - name: podcast_id
+            description: "Referenced podcast"
+          - name: episode_id
+            description: "Referenced episode (if specific)"
+          - name: platform
+            description: "Social media platform"
+            tests:
+              - accepted_values:
+                  values: ['twitter', 'facebook', 'instagram', 'reddit', 'tiktok']
+          - name: mention_type
+            description: "Type of mention"
+            tests:
+              - accepted_values:
+                  values: ['mention', 'share', 'review', 'comment']
+          - name: content
+            description: "Mention content/text"
+          - name: author
+            description: "Mention author"
+          - name: timestamp
+            description: "Mention timestamp"
+          - name: engagement_count
+            description: "Likes, shares, etc."
+          - name: sentiment_score
+            description: "Sentiment analysis score"
+
+  - name: external_apis
+    description: "External API metadata and rate limiting"
+    schema: external
+    tables:
+      - name: api_rate_limits
+        description: "API rate limiting tracking"
+        freshness:
+          warn_after: {count: 1, period: hour}
+          error_after: {count: 6, period: hour}
+        columns:
+          - name: api_name
+            description: "API service name"
+            tests:
+              - not_null
+          - name: endpoint
+            description: "API endpoint"
+            tests:
+              - not_null
+          - name: requests_made
+            description: "Number of requests made"
+          - name: requests_limit
+            description: "Request limit"
+          - name: reset_time
+            description: "When the limit resets" 

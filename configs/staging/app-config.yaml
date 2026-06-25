@@ -1,0 +1,420 @@
+# STAGING APPLICATION CONFIGURATION
+# PodcastFlow Analytics Enterprise Platform
+# Version: 3.0.0
+# Environment: Staging
+
+# Application Settings
+app:
+  name: "PodcastFlow Analytics (Staging)"
+  version: "3.0.0"
+  environment: "staging"
+  debug: true
+  secret_key: "${JWT_SECRET_KEY}"
+  timezone: "UTC"
+  
+  # Performance Settings (relaxed for testing)
+  performance:
+    max_workers: 2
+    worker_timeout: 180
+    keep_alive: 2
+    max_requests: 500
+    max_requests_jitter: 25
+    
+  # Security Settings (relaxed for testing)
+  security:
+    enforce_https: false
+    session_timeout: 7200  # 2 hours
+    max_login_attempts: 10
+    lockout_duration: 300  # 5 minutes
+    csrf_protection: true
+    content_security_policy: false
+    
+# Database Configuration
+database:
+  # BigQuery Configuration
+  bigquery:
+    project_id: "${PROJECT_ID}"
+    location: "US"
+    datasets:
+      bronze: "staging_podcastflow_bronze"
+      silver: "staging_podcastflow_silver"
+      gold: "staging_podcastflow_gold"
+      ml_models: "staging_ml_models"
+      monitoring: "staging_monitoring"
+    
+    # Query Configuration
+    query_timeout: 180  # 3 minutes
+    max_results: 5000
+    use_query_cache: true
+    job_timeout: 300  # 5 minutes
+    
+    # Connection Settings
+    max_connections: 10
+    connection_timeout: 30
+    retry_attempts: 3
+    retry_delay: 1
+    
+  # Redis Configuration (for caching)
+  redis:
+    host: "${REDIS_HOST}"
+    port: 6379
+    db: 1  # Different DB for staging
+    password: "${REDIS_PASSWORD}"
+    ssl: false
+    max_connections: 50
+    socket_timeout: 5
+    socket_connect_timeout: 5
+    health_check_interval: 60
+    
+    # Cache TTL Settings (shorter for testing)
+    cache_ttl:
+      default: 180  # 3 minutes
+      user_session: 1800  # 30 minutes
+      ml_features: 900  # 15 minutes
+      dashboard_data: 300  # 5 minutes
+      api_responses: 180  # 3 minutes
+
+# Authentication & Authorization
+auth:
+  # Google OAuth Configuration
+  google_oauth:
+    client_id: "${STAGING_OAUTH_CLIENT_ID}"
+    client_secret: "${STAGING_OAUTH_CLIENT_SECRET}"
+    redirect_uri: "${STAGING_OAUTH_REDIRECT_URI}"
+    scopes:
+      - "openid"
+      - "email"
+      - "profile"
+    
+  # JWT Configuration
+  jwt:
+    secret_key: "${JWT_SECRET_KEY}"
+    algorithm: "HS256"
+    access_token_expire_minutes: 120  # 2 hours for testing
+    refresh_token_expire_days: 7
+    issuer: "podcastflow-analytics-staging"
+    audience: "podcastflow-staging-users"
+    
+  # Multi-tenancy Configuration (relaxed limits)
+  tenancy:
+    enforce_tenant_isolation: true
+    default_tenant_quota:
+      max_users: 100
+      max_storage_gb: 100
+      max_api_calls_per_hour: 10000
+      max_ml_inferences_per_day: 50000
+    
+    tenant_tiers:
+      free:
+        max_users: 20
+        max_storage_gb: 2
+        max_api_calls_per_hour: 2000
+        max_ml_inferences_per_day: 10000
+      premium:
+        max_users: 50
+        max_storage_gb: 20
+        max_api_calls_per_hour: 5000
+        max_ml_inferences_per_day: 25000
+      enterprise:
+        max_users: 100
+        max_storage_gb: 100
+        max_api_calls_per_hour: 10000
+        max_ml_inferences_per_day: 50000
+
+# Machine Learning Configuration
+ml:
+  # Model Configuration
+  models:
+    recommendation_engine:
+      model_path: "gs://${ML_MODEL_BUCKET}/staging/recommendation_engine/v3.0.0"
+      batch_size: 50
+      max_cache_size: 5000
+      inference_timeout: 10  # seconds (relaxed)
+      
+    performance_predictor:
+      model_path: "gs://${ML_MODEL_BUCKET}/staging/performance_predictor/v3.0.0"
+      batch_size: 25
+      max_cache_size: 2500
+      inference_timeout: 8  # seconds (relaxed)
+      
+    user_segmentation:
+      model_path: "gs://${ML_MODEL_BUCKET}/staging/user_segmentation/v3.0.0"
+      batch_size: 100
+      max_cache_size: 10000
+      inference_timeout: 15  # seconds (relaxed)
+      
+  # Feature Store Configuration
+  feature_store:
+    project_id: "${PROJECT_ID}"
+    region: "us-central1"
+    cache_enabled: true
+    cache_ttl: 900  # 15 minutes
+    batch_size: 500
+    timeout: 60  # seconds (relaxed)
+    
+  # Training Configuration (enabled for testing)
+  training:
+    enabled: true
+    schedule: "0 4 * * *"  # Daily at 4 AM UTC
+    auto_deploy: false
+    validation_threshold: 0.7  # Lower threshold for staging
+    
+# API Configuration
+api:
+  # Server Configuration
+  host: "0.0.0.0"
+  port: 8000
+  workers: 2
+  
+  # Rate Limiting (relaxed)
+  rate_limiting:
+    enabled: true
+    default_rate: "2000/hour"
+    burst_rate: "200/minute"
+    
+    tier_rates:
+      free: "200/hour"
+      premium: "2000/hour"
+      enterprise: "20000/hour"
+      
+  # CORS Configuration (more permissive)
+  cors:
+    allow_origins:
+      - "https://*.staging.podcastflow.com"
+      - "https://staging.podcastflow.com"
+      - "http://localhost:*"
+      - "http://127.0.0.1:*"
+    allow_methods:
+      - "GET"
+      - "POST"
+      - "PUT"
+      - "DELETE"
+      - "OPTIONS"
+      - "PATCH"
+    allow_headers:
+      - "Authorization"
+      - "Content-Type"
+      - "X-Requested-With"
+      - "X-Debug-Token"
+    allow_credentials: true
+    max_age: 3600  # 1 hour
+    
+  # Request/Response Configuration
+  max_request_size: 52428800  # 50MB (larger for testing)
+  request_timeout: 60  # seconds (relaxed)
+  
+# Dashboard Configuration
+dashboard:
+  # Streamlit Configuration
+  streamlit:
+    server_port: 8080
+    server_address: "0.0.0.0"
+    browser_gather_usage_stats: false
+    server_max_upload_size: 500  # MB (larger for testing)
+    server_max_message_size: 500  # MB
+    
+  # Performance Settings
+  performance:
+    cache_enabled: true
+    cache_ttl: 180  # 3 minutes
+    lazy_loading: false  # Disabled for testing
+    chart_optimization: false  # Disabled for testing
+    max_data_points: 50000  # More data for testing
+    
+  # Session Configuration
+  session:
+    max_entries: 2000
+    timeout: 7200  # 2 hours
+    
+# Logging Configuration
+logging:
+  level: "DEBUG"
+  format: "json"
+  
+  # Google Cloud Logging
+  google_cloud:
+    enabled: true
+    project_id: "${PROJECT_ID}"
+    log_name: "staging-podcastflow-analytics"
+    
+  # Application Logs (more verbose)
+  loggers:
+    app:
+      level: "DEBUG"
+      handlers: ["cloud", "console"]
+    
+    security:
+      level: "INFO"
+      handlers: ["cloud", "security", "console"]
+      
+    ml:
+      level: "DEBUG"
+      handlers: ["cloud", "ml", "console"]
+      
+    performance:
+      level: "DEBUG"
+      handlers: ["cloud", "performance", "console"]
+      
+  # Log Handlers
+  handlers:
+    cloud:
+      type: "google_cloud"
+      
+    console:
+      type: "console"
+      
+    security:
+      type: "google_cloud"
+      log_name: "staging-security-events"
+      
+    ml:
+      type: "google_cloud"
+      log_name: "staging-ml-events"
+      
+    performance:
+      type: "google_cloud"
+      log_name: "staging-performance-events"
+
+# Monitoring & Observability (relaxed)
+monitoring:
+  # Metrics Collection
+  metrics:
+    enabled: true
+    collection_interval: 120  # 2 minutes
+    export_interval: 600  # 10 minutes
+    
+    # Custom Metrics
+    custom_metrics:
+      - "api_response_time"
+      - "ml_inference_time"
+      - "database_query_time"
+      - "active_users"
+      - "recommendation_accuracy"
+      
+  # Health Checks
+  health_checks:
+    enabled: true
+    interval: 60  # seconds
+    timeout: 30  # seconds (relaxed)
+    
+    checks:
+      - name: "database"
+        type: "bigquery"
+        critical: false  # Not critical in staging
+        
+      - name: "redis"
+        type: "redis"
+        critical: false
+        
+      - name: "ml_models"
+        type: "ml_inference"
+        critical: false
+        
+  # Alerting (less aggressive)
+  alerting:
+    enabled: true
+    webhook_url: "${STAGING_ALERT_WEBHOOK_URL}"
+    
+    thresholds:
+      api_response_time: 3.0  # seconds (relaxed)
+      error_rate: 0.1  # 10% (relaxed)
+      ml_accuracy: 0.7  # 70% (relaxed)
+      cpu_usage: 0.9  # 90% (relaxed)
+      memory_usage: 0.95  # 95% (relaxed)
+
+# Security Configuration (relaxed)
+security:
+  # Encryption
+  encryption:
+    key: "${STAGING_ENCRYPTION_KEY}"
+    algorithm: "AES-256-GCM"
+    
+  # API Security
+  api_security:
+    require_https: false  # Allow HTTP in staging
+    validate_tokens: true
+    rate_limiting: true
+    input_validation: true
+    
+  # Data Security
+  data_security:
+    encrypt_sensitive_fields: true
+    pii_detection: false  # Disabled for testing
+    audit_logging: true
+    
+  # Network Security
+  network_security:
+    allowed_ips: []  # All IPs allowed
+    blocked_ips: []
+    
+# Backup & Recovery (simplified)
+backup:
+  enabled: true
+  schedule: "0 5 * * *"  # Daily at 5 AM UTC
+  retention_days: 7  # Shorter retention
+  
+  # BigQuery Backup
+  bigquery:
+    backup_datasets: true
+    backup_tables: false  # Skip table backups
+    cross_region_backup: false
+    
+# Feature Flags (more experimental features enabled)
+feature_flags:
+  ml_training: true
+  experimental_features: true
+  beta_dashboard: true
+  advanced_analytics: true
+  real_time_updates: true
+  debug_mode: true
+
+# External Integrations (test accounts)
+integrations:
+  # Email Service
+  email:
+    provider: "sendgrid"
+    api_key: "${STAGING_SENDGRID_API_KEY}"
+    from_email: "staging-noreply@podcastflow.com"
+    
+  # Notification Services
+  notifications:
+    slack:
+      webhook_url: "${STAGING_SLACK_WEBHOOK_URL}"
+      channel: "#staging-alerts"
+      
+    pagerduty:
+      service_key: "${STAGING_PAGERDUTY_SERVICE_KEY}"
+      
+# Resource Limits (relaxed)
+resource_limits:
+  # Memory Limits
+  memory:
+    max_heap_size: "2g"
+    max_cache_size: "512m"
+    
+  # CPU Limits
+  cpu:
+    max_threads: 4
+    max_workers: 2
+    
+  # Network Limits
+  network:
+    max_connections: 500
+    connection_timeout: 60
+    read_timeout: 120
+    
+# Environment Variables
+environment_variables:
+  PYTHONPATH: "/app"
+  PYTHONUNBUFFERED: "1"
+  PYTHONOPTIMIZE: "1"  # Less optimization for debugging
+  TZ: "UTC"
+  
+  # Google Cloud
+  GOOGLE_CLOUD_PROJECT: "${PROJECT_ID}"
+  GOOGLE_APPLICATION_CREDENTIALS: "/app/credentials/staging-service-account.json"
+  
+  # Application
+  ENV: "staging"
+  DEBUG: "true"
+  LOG_LEVEL: "DEBUG" 

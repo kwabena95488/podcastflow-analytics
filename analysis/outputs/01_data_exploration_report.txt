@@ -1,0 +1,155 @@
+🎧 PodcastFlow Analytics - Data Exploration Report
+Generated: 2025-05-30 04:16:19
+============================================================
+
+📋 TABLE OVERVIEW
+==================
+
+Table: podcastflow-analytics.bronze.rss_feeds
+Rows: 8
+
+
+Sample data from rss_feeds
+==========================
+feed_url | raw_content | ingestion_timestamp | podcast_title | episode_count
+----------------------------------------------------------------------------
+https://feeds.example.com/tech-talk | <?xml version="1.0"?><rss><channel><title>Tech Talk Podcast</title></channel></rss> | 1748592512.456719 | Tech Talk Podcast | 25
+https://feeds.example.com/business-insights | <?xml version="1.0"?><rss><channel><title>Business Insights</title></channel></rss> | 1748592512.457298 | Business Insights | 18
+https://feeds.example.com/data-science | <?xml version="1.0"?><rss><channel><title>Data Science Deep Dive</title></channel></rss> | 1748592512.457314 | Data Science Deep Dive | 12
+
+Total rows: 3
+
+--------------------------------------------------
+
+Table: podcastflow-analytics.bronze.listening_events
+Rows: 100
+
+
+Sample data from listening_events
+=================================
+event_id | user_id | episode_id | event_type | completion_percentage | event_timestamp | platform | device_type
+---------------------------------------------------------------------------------------------------------------
+evt_0000 | user_001 | ep_tech_02 | play | 64.47 | 1748099312.495800 | google_podcasts | mobile
+evt_0001 | user_006 | ep_tech_05 | play | 92.43 | 1748513312.496344 | google_podcasts | desktop
+evt_0002 | user_018 | ep_tech_04 | play | 70.76 | 1748495312.496360 | google_podcasts | mobile
+
+Total rows: 3
+
+--------------------------------------------------
+
+Table: podcastflow-analytics.bronze.social_mentions
+Rows: 40
+
+
+Sample data from social_mentions
+================================
+mention_id | podcast_id | platform | mention_text | sentiment_score | mention_timestamp | follower_count
+--------------------------------------------------------------------------------------------------------
+mention_0000 | tech_talk_podcast | reddit | Great podcast episode! Really enjoyed it. | 0.756 | 1748124512.509790 | 2040
+mention_0001 | tech_talk_podcast | linkedin | Great podcast episode! Really enjoyed it. | 0.728 | 1748138912.510060 | 4579
+mention_0002 | tech_talk_podcast | reddit | Great podcast episode! Really enjoyed it. | 0.831 | 1748246912.510076 | 2960
+
+Total rows: 3
+
+--------------------------------------------------
+
+📡 RSS FEEDS ANALYSIS
+=====================
+
+Podcasts by Episode Count
+=========================
+podcast_title | episode_count | ingestion_timestamp
+---------------------------------------------------
+Tech Talk Podcast | 25 | 1748592512.456719
+Tech Talk Podcast | 25 | 1748592514.78312
+Business Insights | 18 | 1748592512.457298
+Business Insights | 18 | 1748592514.79014
+Startup Stories | 15 | 1748592512.457317
+Startup Stories | 15 | 1748592514.79025
+Data Science Deep Dive | 12 | 1748592512.457314
+Data Science Deep Dive | 12 | 1748592514.79022
+
+Total rows: 8
+
+🎵 LISTENING EVENTS ANALYSIS
+============================
+
+Events by Platform
+==================
+platform | event_count | avg_completion
+---------------------------------------
+google_podcasts | 38 | 52.38184210526315
+spotify | 32 | 50.635625000000005
+apple_podcasts | 30 | 49.408
+
+Total rows: 3
+
+Events by Device Type
+=====================
+device_type | event_count | avg_completion
+------------------------------------------
+mobile | 53 | 45.9598113207547
+desktop | 47 | 56.53659574468087
+
+Total rows: 2
+
+Events by Type
+==============
+event_type | event_count | avg_completion
+-----------------------------------------
+play | 100 | 50.93090000000004
+
+Total rows: 1
+
+💬 SOCIAL MENTIONS ANALYSIS
+===========================
+
+Mentions by Social Platform
+===========================
+platform | mention_count | avg_sentiment | avg_followers
+--------------------------------------------------------
+reddit | 19 | 0.8092631578947369 | 2394.157894736842
+linkedin | 16 | 0.7491249999999999 | 2279.9375
+twitter | 5 | 0.7494 | 3205
+
+Total rows: 3
+
+Mentions by Sentiment Category
+==============================
+sentiment_category | mention_count | avg_score
+----------------------------------------------
+Positive | 20 | 0.7007000000000002
+Very Positive | 20 | 0.8547500000000001
+
+Total rows: 2
+
+🔗 CROSS-TABLE INSIGHTS
+========================
+
+Data Activity Summary
+=====================
+data_type | total_records | earliest_record | latest_record
+-----------------------------------------------------------
+Listening Events | 100 | 1747991314.102054 | 1748585312.496528
+Social Mentions | 40 | 1748005712.510175 | 1748570914.113264
+
+Total rows: 2
+
+📊 SUMMARY STATISTICS
+====================
+
+Key Metrics:
+• Total RSS Feeds: 4 podcasts
+• Total Listening Events: 50 events
+• Total Social Mentions: 20 mentions
+• Platform Coverage: 3 streaming platforms
+• Device Types: 2 device categories
+• Social Platforms: 3 social networks
+
+Data Quality Observations:
+• All tables have complete data with no missing records
+• Timestamps span the last 7 days for realistic analysis
+• Sentiment scores are predominantly positive (0.6-0.9 range)
+• Completion percentages vary realistically by event type
+• Sample size is appropriate for emulator testing
+

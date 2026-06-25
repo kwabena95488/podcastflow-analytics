@@ -1,0 +1,23 @@
+version: 2
+
+models:
+  - name: podcast_performance_metrics
+    description: "Per-podcast rollup: episode counts, listener/session counts, completion and engagement."
+    columns:
+      - name: podcast_id
+        tests:
+          - not_null
+          - unique
+          - relationships:
+              to: ref('dim_podcast')
+              field: podcast_id
+      - name: avg_engagement_score
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 100
+      - name: avg_completion_rate
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 1

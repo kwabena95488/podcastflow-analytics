@@ -1,0 +1,412 @@
+# PRODUCTION APPLICATION CONFIGURATION
+# PodcastFlow Analytics Enterprise Platform
+# Version: 3.0.0
+# Environment: Production
+
+# Application Settings
+app:
+  name: "PodcastFlow Analytics"
+  version: "3.0.0"
+  environment: "production"
+  debug: false
+  secret_key: "${JWT_SECRET_KEY}"
+  timezone: "UTC"
+  
+  # Performance Settings
+  performance:
+    max_workers: 4
+    worker_timeout: 300
+    keep_alive: 2
+    max_requests: 1000
+    max_requests_jitter: 50
+    
+  # Security Settings
+  security:
+    enforce_https: true
+    session_timeout: 3600  # 1 hour
+    max_login_attempts: 5
+    lockout_duration: 900  # 15 minutes
+    csrf_protection: true
+    content_security_policy: true
+    
+# Database Configuration
+database:
+  # BigQuery Configuration
+  bigquery:
+    project_id: "${PROJECT_ID}"
+    location: "US"
+    datasets:
+      bronze: "podcastflow_bronze"
+      silver: "podcastflow_silver"
+      gold: "podcastflow_gold"
+      ml_models: "ml_models"
+      monitoring: "monitoring"
+    
+    # Query Configuration
+    query_timeout: 300  # 5 minutes
+    max_results: 10000
+    use_query_cache: true
+    job_timeout: 600  # 10 minutes
+    
+    # Connection Settings
+    max_connections: 20
+    connection_timeout: 30
+    retry_attempts: 3
+    retry_delay: 1
+    
+  # Redis Configuration (for caching)
+  redis:
+    host: "${REDIS_HOST}"
+    port: 6379
+    db: 0
+    password: "${REDIS_PASSWORD}"
+    ssl: true
+    max_connections: 100
+    socket_timeout: 5
+    socket_connect_timeout: 5
+    health_check_interval: 30
+    
+    # Cache TTL Settings
+    cache_ttl:
+      default: 300  # 5 minutes
+      user_session: 3600  # 1 hour
+      ml_features: 1800  # 30 minutes
+      dashboard_data: 600  # 10 minutes
+      api_responses: 300  # 5 minutes
+
+# Authentication & Authorization
+auth:
+  # Google OAuth Configuration
+  google_oauth:
+    client_id: "${OAUTH_CLIENT_ID}"
+    client_secret: "${OAUTH_CLIENT_SECRET}"
+    redirect_uri: "${OAUTH_REDIRECT_URI}"
+    scopes:
+      - "openid"
+      - "email"
+      - "profile"
+    
+  # JWT Configuration
+  jwt:
+    secret_key: "${JWT_SECRET_KEY}"
+    algorithm: "HS256"
+    access_token_expire_minutes: 60
+    refresh_token_expire_days: 30
+    issuer: "podcastflow-analytics"
+    audience: "podcastflow-users"
+    
+  # Multi-tenancy Configuration
+  tenancy:
+    enforce_tenant_isolation: true
+    default_tenant_quota:
+      max_users: 1000
+      max_storage_gb: 10000
+      max_api_calls_per_hour: 100000
+      max_ml_inferences_per_day: 500000
+    
+    tenant_tiers:
+      free:
+        max_users: 10
+        max_storage_gb: 1
+        max_api_calls_per_hour: 1000
+        max_ml_inferences_per_day: 5000
+      premium:
+        max_users: 100
+        max_storage_gb: 100
+        max_api_calls_per_hour: 10000
+        max_ml_inferences_per_day: 50000
+      enterprise:
+        max_users: 1000
+        max_storage_gb: 10000
+        max_api_calls_per_hour: 100000
+        max_ml_inferences_per_day: 500000
+
+# Machine Learning Configuration
+ml:
+  # Model Configuration
+  models:
+    recommendation_engine:
+      model_path: "gs://${ML_MODEL_BUCKET}/recommendation_engine/v3.0.0"
+      batch_size: 100
+      max_cache_size: 10000
+      inference_timeout: 5  # seconds
+      
+    performance_predictor:
+      model_path: "gs://${ML_MODEL_BUCKET}/performance_predictor/v3.0.0"
+      batch_size: 50
+      max_cache_size: 5000
+      inference_timeout: 3  # seconds
+      
+    user_segmentation:
+      model_path: "gs://${ML_MODEL_BUCKET}/user_segmentation/v3.0.0"
+      batch_size: 200
+      max_cache_size: 20000
+      inference_timeout: 10  # seconds
+      
+  # Feature Store Configuration
+  feature_store:
+    project_id: "${PROJECT_ID}"
+    region: "us-central1"
+    cache_enabled: true
+    cache_ttl: 1800  # 30 minutes
+    batch_size: 1000
+    timeout: 30  # seconds
+    
+  # Training Configuration
+  training:
+    enabled: false  # Disable in production
+    schedule: "0 2 * * 0"  # Weekly at 2 AM UTC
+    auto_deploy: false
+    validation_threshold: 0.8
+    
+# API Configuration
+api:
+  # Server Configuration
+  host: "0.0.0.0"
+  port: 8000
+  workers: 4
+  
+  # Rate Limiting
+  rate_limiting:
+    enabled: true
+    default_rate: "1000/hour"
+    burst_rate: "100/minute"
+    
+    tier_rates:
+      free: "100/hour"
+      premium: "1000/hour"
+      enterprise: "10000/hour"
+      
+  # CORS Configuration
+  cors:
+    allow_origins:
+      - "https://*.podcastflow.com"
+      - "https://podcastflow.com"
+    allow_methods:
+      - "GET"
+      - "POST"
+      - "PUT"
+      - "DELETE"
+      - "OPTIONS"
+    allow_headers:
+      - "Authorization"
+      - "Content-Type"
+      - "X-Requested-With"
+    allow_credentials: true
+    max_age: 86400  # 24 hours
+    
+  # Request/Response Configuration
+  max_request_size: 10485760  # 10MB
+  request_timeout: 30  # seconds
+  
+# Dashboard Configuration
+dashboard:
+  # Streamlit Configuration
+  streamlit:
+    server_port: 8080
+    server_address: "0.0.0.0"
+    browser_gather_usage_stats: false
+    server_max_upload_size: 200  # MB
+    server_max_message_size: 200  # MB
+    
+  # Performance Settings
+  performance:
+    cache_enabled: true
+    cache_ttl: 300  # 5 minutes
+    lazy_loading: true
+    chart_optimization: true
+    max_data_points: 10000
+    
+  # Session Configuration
+  session:
+    max_entries: 1000
+    timeout: 3600  # 1 hour
+    
+# Logging Configuration
+logging:
+  level: "INFO"
+  format: "json"
+  
+  # Google Cloud Logging
+  google_cloud:
+    enabled: true
+    project_id: "${PROJECT_ID}"
+    log_name: "podcastflow-analytics"
+    
+  # Application Logs
+  loggers:
+    app:
+      level: "INFO"
+      handlers: ["cloud"]
+    
+    security:
+      level: "WARNING"
+      handlers: ["cloud", "security"]
+      
+    ml:
+      level: "INFO"
+      handlers: ["cloud", "ml"]
+      
+    performance:
+      level: "DEBUG"
+      handlers: ["cloud", "performance"]
+      
+  # Log Handlers
+  handlers:
+    cloud:
+      type: "google_cloud"
+      
+    security:
+      type: "google_cloud"
+      log_name: "security-events"
+      
+    ml:
+      type: "google_cloud"
+      log_name: "ml-events"
+      
+    performance:
+      type: "google_cloud"
+      log_name: "performance-events"
+
+# Monitoring & Observability
+monitoring:
+  # Metrics Collection
+  metrics:
+    enabled: true
+    collection_interval: 60  # seconds
+    export_interval: 300  # 5 minutes
+    
+    # Custom Metrics
+    custom_metrics:
+      - "api_response_time"
+      - "ml_inference_time"
+      - "database_query_time"
+      - "active_users"
+      - "recommendation_accuracy"
+      
+  # Health Checks
+  health_checks:
+    enabled: true
+    interval: 30  # seconds
+    timeout: 10  # seconds
+    
+    checks:
+      - name: "database"
+        type: "bigquery"
+        critical: true
+        
+      - name: "redis"
+        type: "redis"
+        critical: false
+        
+      - name: "ml_models"
+        type: "ml_inference"
+        critical: true
+        
+  # Alerting
+  alerting:
+    enabled: true
+    webhook_url: "${ALERT_WEBHOOK_URL}"
+    
+    thresholds:
+      api_response_time: 1.0  # seconds
+      error_rate: 0.05  # 5%
+      ml_accuracy: 0.8  # 80%
+      cpu_usage: 0.8  # 80%
+      memory_usage: 0.85  # 85%
+
+# Security Configuration
+security:
+  # Encryption
+  encryption:
+    key: "${ENCRYPTION_KEY}"
+    algorithm: "AES-256-GCM"
+    
+  # API Security
+  api_security:
+    require_https: true
+    validate_tokens: true
+    rate_limiting: true
+    input_validation: true
+    
+  # Data Security
+  data_security:
+    encrypt_sensitive_fields: true
+    pii_detection: true
+    audit_logging: true
+    
+  # Network Security
+  network_security:
+    allowed_ips: []  # Empty means all IPs allowed (handled by Cloud Run)
+    blocked_ips: []
+    
+# Backup & Recovery
+backup:
+  enabled: true
+  schedule: "0 3 * * *"  # Daily at 3 AM UTC
+  retention_days: 30
+  
+  # BigQuery Backup
+  bigquery:
+    backup_datasets: true
+    backup_tables: true
+    cross_region_backup: true
+    
+# Feature Flags
+feature_flags:
+  ml_training: false
+  experimental_features: false
+  beta_dashboard: false
+  advanced_analytics: true
+  real_time_updates: true
+
+# External Integrations
+integrations:
+  # Email Service
+  email:
+    provider: "sendgrid"
+    api_key: "${SENDGRID_API_KEY}"
+    from_email: "noreply@podcastflow.com"
+    
+  # Notification Services
+  notifications:
+    slack:
+      webhook_url: "${SLACK_WEBHOOK_URL}"
+      channel: "#alerts"
+      
+    pagerduty:
+      service_key: "${PAGERDUTY_SERVICE_KEY}"
+      
+# Resource Limits
+resource_limits:
+  # Memory Limits
+  memory:
+    max_heap_size: "3g"
+    max_cache_size: "1g"
+    
+  # CPU Limits
+  cpu:
+    max_threads: 8
+    max_workers: 4
+    
+  # Network Limits
+  network:
+    max_connections: 1000
+    connection_timeout: 30
+    read_timeout: 60
+    
+# Environment Variables
+environment_variables:
+  PYTHONPATH: "/app"
+  PYTHONUNBUFFERED: "1"
+  PYTHONOPTIMIZE: "2"
+  TZ: "UTC"
+  
+  # Google Cloud
+  GOOGLE_CLOUD_PROJECT: "${PROJECT_ID}"
+  GOOGLE_APPLICATION_CREDENTIALS: "/app/credentials/service-account.json"
+  
+  # Application
+  ENV: "production"
+  DEBUG: "false"
+  LOG_LEVEL: "INFO" 

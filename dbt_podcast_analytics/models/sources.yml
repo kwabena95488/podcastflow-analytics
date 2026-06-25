@@ -1,0 +1,93 @@
+version: 2
+
+# Honest scope: only sources that have real data AND a consuming model are declared here, so
+# `dbt build` stays green. The full aspirational catalog (Spotify, Apple, streaming events,
+# external APIs) is preserved in ../sources.aspirational.yml.bak and gets re-added as those
+# pipelines are actually built (Workstreams 2-3). Declaring sources whose BigQuery tables don't
+# exist makes dbt fail on orphan source tests — so they stay out until they're real.
+
+sources:
+  - name: bronze_rss
+    description: "Raw RSS feed data from podcast sources"
+    schema: bronze
+    tables:
+      - name: rss_feeds
+        description: "Raw RSS feed metadata and channel-level fields"
+        columns:
+          - name: feed_url
+            description: "RSS feed URL (natural key)"
+            tests:
+              - not_null
+              - unique
+          - name: title
+            description: "Podcast title from RSS"
+          - name: description
+            description: "Podcast description"
+          - name: published_date
+            description: "Feed/episode publish date"
+            tests:
+              - not_null
+          - name: raw_content
+            description: "Raw RSS XML content (regex-parsed downstream)"
+          - name: ingestion_timestamp
+            description: "When the row was ingested"
+            tests:
+              - not_null
+          - name: source_type
+            description: "Source channel (e.g. 'rss')"
+
+      - name: rss_episodes
+        description: "Episode-level data parsed from RSS feeds (synthetic sample data)"
+        columns:
+          - name: episode_id
+            description: "Natural episode identifier"
+            tests:
+              - not_null
+              - unique
+          - name: feed_url
+            description: "Parent podcast feed URL (FK to rss_feeds)"
+            tests:
+              - not_null
+          - name: duration_seconds
+            description: "Episode duration in seconds"
+            tests:
+              - dbt_expectations.expect_column_values_to_be_between:
+                  min_value: 1
+                  max_value: 36000
+          - name: published_date
+            tests:
+              - not_null
+          - name: ingestion_timestamp
+            tests:
+              - not_null
+
+  - name: bronze_events
+    description: "Listening-behavior events (synthetic sample data; the real path would be streaming ingestion)"
+    schema: bronze
+    tables:
+      - name: listening_events
+        description: "User listening events at play/pause/skip/complete/download grain"
+        columns:
+          - name: event_id
+            tests:
+              - not_null
+              - unique
+          - name: user_id
+            tests:
+              - not_null
+          - name: episode_id
+            description: "FK to rss_episodes.episode_id"
+            tests:
+              - not_null
+          - name: event_type
+            tests:
+              - accepted_values:
+                  values: ['play', 'pause', 'skip', 'complete', 'download']
+          - name: completion_percentage
+            tests:
+              - dbt_expectations.expect_column_values_to_be_between:
+                  min_value: 0
+                  max_value: 100
+          - name: ingestion_timestamp
+            tests:
+              - not_null

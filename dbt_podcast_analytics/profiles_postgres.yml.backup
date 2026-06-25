@@ -1,0 +1,37 @@
+podcast_analytics:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: localhost
+      user: podcastflow
+      password: podcastflow123
+      port: 5432
+      dbname: podcastflow
+      schema: silver  # Default schema for staging models
+      threads: 4
+      keepalives_idle: 0
+      search_path: "silver,bronze,gold,dbt_artifacts,streaming,external"
+      
+    prod:
+      type: postgres
+      host: postgres  # Docker service name
+      user: podcastflow
+      password: podcastflow123
+      port: 5432
+      dbname: podcastflow
+      schema: silver
+      threads: 8
+      keepalives_idle: 0
+      search_path: "silver,bronze,gold,dbt_artifacts,streaming,external"
+      
+    test:
+      type: postgres
+      host: localhost
+      user: podcastflow
+      password: podcastflow123
+      port: 5432
+      dbname: podcastflow_test
+      schema: silver_test
+      threads: 2
+      keepalives_idle: 0 

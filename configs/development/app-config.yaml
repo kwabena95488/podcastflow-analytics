@@ -1,0 +1,401 @@
+# DEVELOPMENT APPLICATION CONFIGURATION
+# PodcastFlow Analytics Enterprise Platform
+# Version: 3.0.0
+# Environment: Development
+
+# Application Settings
+app:
+  name: "PodcastFlow Analytics (Development)"
+  version: "3.0.0-dev"
+  environment: "development"
+  debug: true
+  secret_key: "dev-secret-key-change-in-production"
+  timezone: "UTC"
+  
+  # Performance Settings (minimal for dev)
+  performance:
+    max_workers: 1
+    worker_timeout: 120
+    keep_alive: 1
+    max_requests: 100
+    max_requests_jitter: 10
+    
+  # Security Settings (minimal for dev)
+  security:
+    enforce_https: false
+    session_timeout: 86400  # 24 hours
+    max_login_attempts: 20
+    lockout_duration: 60  # 1 minute
+    csrf_protection: false
+    content_security_policy: false
+    
+# Database Configuration
+database:
+  # BigQuery Configuration
+  bigquery:
+    project_id: "${PROJECT_ID:-dev-podcastflow}"
+    location: "US"
+    datasets:
+      bronze: "dev_podcastflow_bronze"
+      silver: "dev_podcastflow_silver"
+      gold: "dev_podcastflow_gold"
+      ml_models: "dev_ml_models"
+      monitoring: "dev_monitoring"
+    
+    # Query Configuration (relaxed)
+    query_timeout: 120  # 2 minutes
+    max_results: 1000
+    use_query_cache: false  # Disabled for fresh data
+    job_timeout: 180  # 3 minutes
+    
+    # Connection Settings
+    max_connections: 5
+    connection_timeout: 60
+    retry_attempts: 2
+    retry_delay: 2
+    
+  # Redis Configuration (local or docker)
+  redis:
+    host: "${REDIS_HOST:-localhost}"
+    port: 6379
+    db: 2  # Different DB for development
+    password: "${REDIS_PASSWORD:-}"
+    ssl: false
+    max_connections: 10
+    socket_timeout: 10
+    socket_connect_timeout: 10
+    health_check_interval: 120
+    
+    # Cache TTL Settings (very short for dev)
+    cache_ttl:
+      default: 60  # 1 minute
+      user_session: 3600  # 1 hour
+      ml_features: 300  # 5 minutes
+      dashboard_data: 120  # 2 minutes
+      api_responses: 60  # 1 minute
+
+# Authentication & Authorization (simplified)
+auth:
+  # Google OAuth Configuration (dev credentials)
+  google_oauth:
+    client_id: "${DEV_OAUTH_CLIENT_ID:-dev-client-id}"
+    client_secret: "${DEV_OAUTH_CLIENT_SECRET:-dev-client-secret}"
+    redirect_uri: "${DEV_OAUTH_REDIRECT_URI:-http://localhost:8000/auth/callback}"
+    scopes:
+      - "openid"
+      - "email"
+      - "profile"
+    
+  # JWT Configuration (insecure for dev)
+  jwt:
+    secret_key: "dev-jwt-secret-key"
+    algorithm: "HS256"
+    access_token_expire_minutes: 480  # 8 hours for dev convenience
+    refresh_token_expire_days: 30
+    issuer: "podcastflow-analytics-dev"
+    audience: "podcastflow-dev-users"
+    
+  # Multi-tenancy Configuration (very relaxed)
+  tenancy:
+    enforce_tenant_isolation: false  # Disabled for easier testing
+    default_tenant_quota:
+      max_users: 1000
+      max_storage_gb: 1000
+      max_api_calls_per_hour: 100000
+      max_ml_inferences_per_day: 1000000
+    
+    tenant_tiers:
+      free:
+        max_users: 1000
+        max_storage_gb: 100
+        max_api_calls_per_hour: 10000
+        max_ml_inferences_per_day: 100000
+      premium:
+        max_users: 1000
+        max_storage_gb: 1000
+        max_api_calls_per_hour: 100000
+        max_ml_inferences_per_day: 1000000
+      enterprise:
+        max_users: 1000
+        max_storage_gb: 1000
+        max_api_calls_per_hour: 100000
+        max_ml_inferences_per_day: 1000000
+
+# Machine Learning Configuration (local models)
+ml:
+  # Model Configuration (local or test models)
+  models:
+    recommendation_engine:
+      model_path: "${ML_MODEL_PATH:-./ml/models}/recommendation_engine"
+      batch_size: 10
+      max_cache_size: 100
+      inference_timeout: 30  # seconds (very relaxed)
+      
+    performance_predictor:
+      model_path: "${ML_MODEL_PATH:-./ml/models}/performance_predictor"
+      batch_size: 5
+      max_cache_size: 50
+      inference_timeout: 30  # seconds (very relaxed)
+      
+    user_segmentation:
+      model_path: "${ML_MODEL_PATH:-./ml/models}/user_segmentation"
+      batch_size: 20
+      max_cache_size: 200
+      inference_timeout: 30  # seconds (very relaxed)
+      
+  # Feature Store Configuration (simplified)
+  feature_store:
+    project_id: "${PROJECT_ID:-dev-podcastflow}"
+    region: "us-central1"
+    cache_enabled: false  # Disabled for fresh data
+    cache_ttl: 300  # 5 minutes
+    batch_size: 100
+    timeout: 120  # seconds (very relaxed)
+    
+  # Training Configuration (enabled for dev/testing)
+  training:
+    enabled: true
+    schedule: "0 6 * * *"  # Daily at 6 AM UTC
+    auto_deploy: true  # Auto-deploy in dev
+    validation_threshold: 0.5  # Very low threshold for dev
+    
+# API Configuration
+api:
+  # Server Configuration
+  host: "127.0.0.1"
+  port: 8000
+  workers: 1
+  
+  # Rate Limiting (very relaxed)
+  rate_limiting:
+    enabled: false  # Disabled for development
+    default_rate: "10000/hour"
+    burst_rate: "1000/minute"
+    
+    tier_rates:
+      free: "10000/hour"
+      premium: "10000/hour"
+      enterprise: "10000/hour"
+      
+  # CORS Configuration (very permissive)
+  cors:
+    allow_origins:
+      - "*"  # Allow all origins in dev
+    allow_methods:
+      - "*"  # Allow all methods
+    allow_headers:
+      - "*"  # Allow all headers
+    allow_credentials: true
+    max_age: 86400  # 24 hours
+    
+  # Request/Response Configuration (relaxed)
+  max_request_size: 104857600  # 100MB
+  request_timeout: 120  # seconds (very relaxed)
+  
+# Dashboard Configuration
+dashboard:
+  # Streamlit Configuration
+  streamlit:
+    server_port: 8080
+    server_address: "127.0.0.1"
+    browser_gather_usage_stats: false
+    server_max_upload_size: 1000  # MB (very large for dev)
+    server_max_message_size: 1000  # MB
+    server_headless: false  # Allow browser opening
+    
+  # Performance Settings (optimized for development)
+  performance:
+    cache_enabled: false  # Disabled for fresh data
+    cache_ttl: 60  # 1 minute
+    lazy_loading: false  # Disabled for easier debugging
+    chart_optimization: false  # Disabled for debugging
+    max_data_points: 100000  # Large for testing
+    
+  # Session Configuration
+  session:
+    max_entries: 10000
+    timeout: 86400  # 24 hours
+    
+# Logging Configuration (verbose)
+logging:
+  level: "DEBUG"
+  format: "text"  # Human-readable for dev
+  
+  # Google Cloud Logging (optional in dev)
+  google_cloud:
+    enabled: false  # Disabled for local development
+    project_id: "${PROJECT_ID:-dev-podcastflow}"
+    log_name: "dev-podcastflow-analytics"
+    
+  # Application Logs (console output)
+  loggers:
+    app:
+      level: "DEBUG"
+      handlers: ["console"]
+    
+    security:
+      level: "DEBUG"
+      handlers: ["console"]
+      
+    ml:
+      level: "DEBUG"
+      handlers: ["console"]
+      
+    performance:
+      level: "DEBUG"
+      handlers: ["console"]
+      
+  # Log Handlers
+  handlers:
+    console:
+      type: "console"
+      format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+# Monitoring & Observability (minimal)
+monitoring:
+  # Metrics Collection (optional)
+  metrics:
+    enabled: false  # Disabled for development
+    collection_interval: 300  # 5 minutes
+    export_interval: 1200  # 20 minutes
+    
+    # Custom Metrics
+    custom_metrics:
+      - "api_response_time"
+      - "ml_inference_time"
+      - "database_query_time"
+      
+  # Health Checks (simplified)
+  health_checks:
+    enabled: true
+    interval: 300  # 5 minutes
+    timeout: 60  # seconds (very relaxed)
+    
+    checks:
+      - name: "application"
+        type: "basic"
+        critical: false
+        
+  # Alerting (disabled)
+  alerting:
+    enabled: false
+
+# Security Configuration (minimal)
+security:
+  # Encryption (basic)
+  encryption:
+    key: "dev-encryption-key-change-in-production"
+    algorithm: "AES-256-GCM"
+    
+  # API Security (relaxed)
+  api_security:
+    require_https: false
+    validate_tokens: false  # Disabled for easier testing
+    rate_limiting: false
+    input_validation: true
+    
+  # Data Security (relaxed)
+  data_security:
+    encrypt_sensitive_fields: false  # Disabled for dev
+    pii_detection: false
+    audit_logging: false
+    
+  # Network Security
+  network_security:
+    allowed_ips: []  # All IPs allowed
+    blocked_ips: []
+    
+# Backup & Recovery (disabled)
+backup:
+  enabled: false
+    
+# Feature Flags (all enabled for testing)
+feature_flags:
+  ml_training: true
+  experimental_features: true
+  beta_dashboard: true
+  advanced_analytics: true
+  real_time_updates: true
+  debug_mode: true
+  mock_data: true
+  api_documentation: true
+
+# External Integrations (mock or disabled)
+integrations:
+  # Email Service (mock)
+  email:
+    provider: "mock"
+    api_key: "mock-api-key"
+    from_email: "dev-noreply@localhost"
+    
+  # Notification Services (mock)
+  notifications:
+    slack:
+      webhook_url: "https://hooks.slack.com/mock"
+      channel: "#dev-alerts"
+      
+    pagerduty:
+      service_key: "mock-service-key"
+      
+# Resource Limits (minimal)
+resource_limits:
+  # Memory Limits
+  memory:
+    max_heap_size: "1g"
+    max_cache_size: "256m"
+    
+  # CPU Limits
+  cpu:
+    max_threads: 2
+    max_workers: 1
+    
+  # Network Limits
+  network:
+    max_connections: 100
+    connection_timeout: 120
+    read_timeout: 300
+    
+# Environment Variables
+environment_variables:
+  PYTHONPATH: "/app:."
+  PYTHONUNBUFFERED: "1"
+  PYTHONOPTIMIZE: "0"  # No optimization for debugging
+  PYTHONDONTWRITEBYTECODE: "1"  # Don't write .pyc files
+  TZ: "UTC"
+  
+  # Development
+  FLASK_ENV: "development"
+  ENV: "development"
+  DEBUG: "true"
+  LOG_LEVEL: "DEBUG"
+  
+  # Testing
+  TESTING: "true"
+  MOCK_EXTERNAL_APIS: "true"
+  USE_SAMPLE_DATA: "true"
+
+# Development Tools
+dev_tools:
+  # Auto-reload
+  auto_reload: true
+  
+  # Hot reloading for Streamlit
+  hot_reload: true
+  
+  # Debug toolbar
+  debug_toolbar: true
+  
+  # Profiling
+  profiling: true
+  
+  # API documentation
+  api_docs: true
+  swagger_ui: true
+  
+  # Mock data generation
+  mock_data:
+    enabled: true
+    seed: 42
+    num_podcasts: 100
+    num_episodes: 1000
+    num_users: 500 

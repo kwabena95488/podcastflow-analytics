@@ -1,0 +1,54 @@
+version: 2
+
+models:
+  - name: dim_episodes
+    description: "Episode dimension, enriched with parent podcast attributes."
+    columns:
+      - name: episode_key
+        tests:
+          - not_null
+          - unique
+      - name: episode_id
+        tests:
+          - not_null
+          - unique
+      - name: podcast_id
+        description: "FK to dim_podcast"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_podcast')
+              field: podcast_id
+      - name: duration_bucket
+        tests:
+          - accepted_values:
+              values: ['short', 'medium', 'long']
+
+  - name: fct_listening_events
+    description: "Listening events fact (incremental), with engagement scoring."
+    columns:
+      - name: event_id
+        tests:
+          - not_null
+          - unique
+      - name: episode_key
+        description: "FK to dim_episodes"
+        tests:
+          - relationships:
+              to: ref('dim_episodes')
+              field: episode_key
+      - name: podcast_id
+        description: "FK to dim_podcast"
+        tests:
+          - relationships:
+              to: ref('dim_podcast')
+              field: podcast_id
+      - name: event_type
+        tests:
+          - accepted_values:
+              values: ['play', 'pause', 'skip', 'complete', 'download']
+      - name: engagement_score
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 100

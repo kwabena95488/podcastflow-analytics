@@ -1,0 +1,54 @@
+# === Secrets & credentials (NEVER commit) ===
+.env
+.env.*
+*.pem
+*.key
+*_service_account.json
+*-sa-key.json
+config/credentials/*.json
+credentials/
+
+# === Terraform (state can embed secrets) ===
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfplan
+**/terraform-provider-*
+
+# === dbt artifacts / installed packages ===
+**/target/
+**/dbt_packages/
+**/dbt_internal_packages/
+logs/
+*.log
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+.venv/
+venv/
+env/
+ENV/
+.ipynb_checkpoints/
+
+# === IDE / OS ===
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# === Generated / large data (commit only seeds + generator scripts) ===
+data/*.csv
+data/*.json
+data/*.parquet
+*.delta

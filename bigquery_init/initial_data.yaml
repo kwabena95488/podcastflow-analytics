@@ -1,0 +1,362 @@
+# BigQuery Emulator Initial Data Configuration
+# This file defines the initial datasets and tables for the PodcastFlow Analytics platform
+
+datasets:
+  - name: bronze
+    description: "Raw data ingestion layer for podcast analytics"
+    location: US
+    tables:
+      - name: rss_feeds
+        description: "Raw RSS feed data from podcast sources"
+        schema:
+          - name: feed_url
+            type: STRING
+            mode: REQUIRED
+          - name: raw_content
+            type: STRING
+            mode: NULLABLE
+          - name: ingestion_timestamp
+            type: TIMESTAMP
+            mode: REQUIRED
+          - name: podcast_title
+            type: STRING
+            mode: NULLABLE
+          - name: episode_count
+            type: INTEGER
+            mode: NULLABLE
+        data:
+          - feed_url: "https://feeds.example.com/tech-talk"
+            raw_content: '<?xml version="1.0"?><rss><channel><title>Tech Talk Podcast</title><description>Weekly tech discussions</description></channel></rss>'
+            ingestion_timestamp: "2024-01-15T10:00:00Z"
+            podcast_title: "Tech Talk Podcast"
+            episode_count: 125
+          - feed_url: "https://feeds.example.com/business-insights"
+            raw_content: '<?xml version="1.0"?><rss><channel><title>Business Insights</title><description>Business strategy and insights</description></channel></rss>'
+            ingestion_timestamp: "2024-01-15T10:05:00Z"
+            podcast_title: "Business Insights"
+            episode_count: 89
+
+      - name: listening_events
+        description: "User listening behavior events"
+        schema:
+          - name: event_id
+            type: STRING
+            mode: REQUIRED
+          - name: user_id
+            type: STRING
+            mode: REQUIRED
+          - name: episode_id
+            type: STRING
+            mode: REQUIRED
+          - name: event_type
+            type: STRING
+            mode: REQUIRED
+          - name: completion_percentage
+            type: FLOAT
+            mode: NULLABLE
+          - name: event_timestamp
+            type: TIMESTAMP
+            mode: REQUIRED
+          - name: platform
+            type: STRING
+            mode: NULLABLE
+          - name: device_type
+            type: STRING
+            mode: NULLABLE
+        data:
+          - event_id: "evt_001"
+            user_id: "user_123"
+            episode_id: "ep_tech_001"
+            event_type: "play"
+            completion_percentage: 0.0
+            event_timestamp: "2024-01-15T14:30:00Z"
+            platform: "spotify"
+            device_type: "mobile"
+          - event_id: "evt_002"
+            user_id: "user_123"
+            episode_id: "ep_tech_001"
+            event_type: "complete"
+            completion_percentage: 95.5
+            event_timestamp: "2024-01-15T15:15:00Z"
+            platform: "spotify"
+            device_type: "mobile"
+          - event_id: "evt_003"
+            user_id: "user_456"
+            episode_id: "ep_biz_001"
+            event_type: "skip"
+            completion_percentage: 23.2
+            event_timestamp: "2024-01-15T16:45:00Z"
+            platform: "apple_podcasts"
+            device_type: "desktop"
+
+      - name: social_mentions
+        description: "Social media mentions and engagement"
+        schema:
+          - name: mention_id
+            type: STRING
+            mode: REQUIRED
+          - name: podcast_id
+            type: STRING
+            mode: REQUIRED
+          - name: platform
+            type: STRING
+            mode: REQUIRED
+          - name: mention_text
+            type: STRING
+            mode: NULLABLE
+          - name: sentiment_score
+            type: FLOAT
+            mode: NULLABLE
+          - name: mention_timestamp
+            type: TIMESTAMP
+            mode: REQUIRED
+          - name: follower_count
+            type: INTEGER
+            mode: NULLABLE
+        data:
+          - mention_id: "mention_001"
+            podcast_id: "podcast_tech_talk"
+            platform: "twitter"
+            mention_text: "Just listened to the latest @TechTalkPod episode - amazing insights on AI!"
+            sentiment_score: 0.85
+            mention_timestamp: "2024-01-15T18:30:00Z"
+            follower_count: 1250
+
+  - name: silver
+    description: "Cleaned and validated data layer"
+    location: US
+    tables:
+      - name: dim_podcasts_staging
+        description: "Staging table for podcast dimension"
+        schema:
+          - name: podcast_id
+            type: STRING
+            mode: REQUIRED
+          - name: podcast_title
+            type: STRING
+            mode: REQUIRED
+          - name: feed_url
+            type: STRING
+            mode: REQUIRED
+          - name: language
+            type: STRING
+            mode: NULLABLE
+          - name: category
+            type: STRING
+            mode: NULLABLE
+          - name: content_richness_score
+            type: INTEGER
+            mode: NULLABLE
+          - name: created_at
+            type: TIMESTAMP
+            mode: REQUIRED
+          - name: updated_at
+            type: TIMESTAMP
+            mode: REQUIRED
+
+      - name: fact_listening_events_staging
+        description: "Staging table for listening events"
+        schema:
+          - name: event_id
+            type: STRING
+            mode: REQUIRED
+          - name: user_id
+            type: STRING
+            mode: REQUIRED
+          - name: episode_id
+            type: STRING
+            mode: REQUIRED
+          - name: event_type
+            type: STRING
+            mode: REQUIRED
+          - name: completion_percentage
+            type: FLOAT
+            mode: NULLABLE
+          - name: engagement_score
+            type: FLOAT
+            mode: NULLABLE
+          - name: event_date
+            type: DATE
+            mode: REQUIRED
+          - name: event_timestamp
+            type: TIMESTAMP
+            mode: REQUIRED
+          - name: platform
+            type: STRING
+            mode: NULLABLE
+          - name: device_type
+            type: STRING
+            mode: NULLABLE
+
+  - name: gold
+    description: "Analytics-ready aggregated data layer"
+    location: US
+    tables:
+      - name: dim_podcasts
+        description: "Podcast dimension table"
+        schema:
+          - name: podcast_id
+            type: STRING
+            mode: REQUIRED
+          - name: podcast_title
+            type: STRING
+            mode: REQUIRED
+          - name: feed_url
+            type: STRING
+            mode: REQUIRED
+          - name: language
+            type: STRING
+            mode: NULLABLE
+          - name: category
+            type: STRING
+            mode: NULLABLE
+          - name: content_richness_score
+            type: INTEGER
+            mode: NULLABLE
+          - name: is_current
+            type: BOOLEAN
+            mode: REQUIRED
+          - name: effective_date
+            type: DATE
+            mode: REQUIRED
+          - name: expiry_date
+            type: DATE
+            mode: NULLABLE
+          - name: created_at
+            type: TIMESTAMP
+            mode: REQUIRED
+          - name: updated_at
+            type: TIMESTAMP
+            mode: REQUIRED
+
+      - name: dim_episodes
+        description: "Episode dimension table"
+        schema:
+          - name: episode_id
+            type: STRING
+            mode: REQUIRED
+          - name: podcast_id
+            type: STRING
+            mode: REQUIRED
+          - name: episode_title
+            type: STRING
+            mode: REQUIRED
+          - name: episode_description
+            type: STRING
+            mode: NULLABLE
+          - name: duration_seconds
+            type: INTEGER
+            mode: NULLABLE
+          - name: publish_date
+            type: DATE
+            mode: REQUIRED
+          - name: episode_number
+            type: INTEGER
+            mode: NULLABLE
+          - name: season_number
+            type: INTEGER
+            mode: NULLABLE
+
+      - name: fact_listening_events
+        description: "Listening events fact table"
+        schema:
+          - name: event_id
+            type: STRING
+            mode: REQUIRED
+          - name: user_id
+            type: STRING
+            mode: REQUIRED
+          - name: episode_id
+            type: STRING
+            mode: REQUIRED
+          - name: podcast_id
+            type: STRING
+            mode: REQUIRED
+          - name: event_type
+            type: STRING
+            mode: REQUIRED
+          - name: completion_percentage
+            type: FLOAT
+            mode: NULLABLE
+          - name: engagement_score
+            type: FLOAT
+            mode: NULLABLE
+          - name: event_date
+            type: DATE
+            mode: REQUIRED
+          - name: event_timestamp
+            type: TIMESTAMP
+            mode: REQUIRED
+          - name: platform
+            type: STRING
+            mode: NULLABLE
+          - name: device_type
+            type: STRING
+            mode: NULLABLE
+
+      - name: agg_daily_podcast_metrics
+        description: "Daily aggregated podcast metrics"
+        schema:
+          - name: metric_date
+            type: DATE
+            mode: REQUIRED
+          - name: podcast_id
+            type: STRING
+            mode: REQUIRED
+          - name: total_events
+            type: INTEGER
+            mode: REQUIRED
+          - name: unique_listeners
+            type: INTEGER
+            mode: REQUIRED
+          - name: avg_completion_rate
+            type: FLOAT
+            mode: NULLABLE
+          - name: avg_engagement_score
+            type: FLOAT
+            mode: NULLABLE
+          - name: total_play_time_minutes
+            type: FLOAT
+            mode: NULLABLE
+
+  - name: dbt_artifacts
+    description: "dbt metadata and lineage tracking"
+    location: US
+    tables:
+      - name: dbt_run_results
+        description: "dbt run execution results"
+        schema:
+          - name: run_id
+            type: STRING
+            mode: REQUIRED
+          - name: model_name
+            type: STRING
+            mode: REQUIRED
+          - name: status
+            type: STRING
+            mode: REQUIRED
+          - name: execution_time_seconds
+            type: FLOAT
+            mode: NULLABLE
+          - name: rows_affected
+            type: INTEGER
+            mode: NULLABLE
+          - name: run_timestamp
+            type: TIMESTAMP
+            mode: REQUIRED
+
+      - name: dbt_model_lineage
+        description: "dbt model dependency lineage"
+        schema:
+          - name: parent_model
+            type: STRING
+            mode: REQUIRED
+          - name: child_model
+            type: STRING
+            mode: REQUIRED
+          - name: dependency_type
+            type: STRING
+            mode: REQUIRED
+          - name: created_at
+            type: TIMESTAMP
+            mode: REQUIRED 

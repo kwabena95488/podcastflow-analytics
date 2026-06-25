@@ -1,0 +1,87 @@
+# Multi-stage Dockerfile for Cloud Run deployment
+# Optimized for fast cold starts and minimal image size
+
+# Build stage
+FROM python:3.9-slim as builder
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create and activate virtual environment
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Copy requirements and install Python dependencies
+COPY requirements.txt .
+RUN pip install --upgrade pip && \
+    pip install -r requirements.txt
+
+# Production stage
+FROM python:3.9-slim
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PORT=8080 \
+    GOOGLE_CLOUD_PROJECT=your-gcp-project
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user for security
+RUN addgroup --system --gid 1001 streamlit && \
+    adduser --system --uid 1001 --gid 1001 streamlit
+
+# Copy virtual environment from builder stage
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Set working directory
+WORKDIR /app
+
+# Copy application code
+COPY dashboard/ ./dashboard/
+COPY scripts/ ./scripts/
+COPY docs/ ./docs/
+COPY *.json ./
+COPY *.md ./
+
+# Create necessary directories
+RUN mkdir -p /app/logs && \
+    chown -R streamlit:streamlit /app
+
+# Switch to non-root user
+USER streamlit
+
+# Health check endpoint
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:$PORT/_stcore/health || exit 1
+
+# Expose port
+EXPOSE $PORT
+
+# Start command optimized for Cloud Run
+CMD streamlit run dashboard/app.py \
+    --server.port=$PORT \
+    --server.address=0.0.0.0 \
+    --server.runOnSave=false \
+    --server.headless=true \
+    --server.enableCORS=false \
+    --server.enableXsrfProtection=false \
+    --server.fileWatcherType=none \
+    --browser.gatherUsageStats=false \
+    --theme.primaryColor="#6366f1" \
+    --theme.backgroundColor="#ffffff" \
+    --theme.secondaryBackgroundColor="#f8fafc" \
+    --theme.textColor="#1f2937" 

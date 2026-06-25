@@ -1,0 +1,393 @@
+# PRODUCTION MONITORING CONFIGURATION
+# PodcastFlow Analytics Enterprise Platform
+# Version: 3.0.0
+# Environment: Production
+
+# Google Cloud Monitoring Configuration
+monitoring:
+  project_id: "${PROJECT_ID}"
+  region: "us-central1"
+  
+  # Custom Metrics
+  custom_metrics:
+    - name: "api_response_time"
+      description: "API endpoint response times"
+      type: "GAUGE"
+      unit: "seconds"
+    
+    - name: "ml_inference_time"
+      description: "ML model inference times"
+      type: "GAUGE"
+      unit: "seconds"
+    
+    - name: "database_query_time"
+      description: "Database query execution times"
+      type: "GAUGE"
+      unit: "seconds"
+    
+    - name: "active_users"
+      description: "Number of active users"
+      type: "GAUGE"
+      unit: "count"
+    
+    - name: "recommendation_accuracy"
+      description: "ML recommendation accuracy score"
+      type: "GAUGE"
+      unit: "ratio"
+
+  # SLO (Service Level Objectives)
+  slos:
+    api_availability:
+      display_name: "API Availability SLO"
+      goal: 0.999  # 99.9% availability
+      rolling_period: "30d"
+      service_level_indicator:
+        request_based:
+          good_total_ratio:
+            good_service_filter: "response_code<500"
+            total_service_filter: "has(response_code)"
+    
+    api_latency:
+      display_name: "API Latency SLO"
+      goal: 0.95  # 95% of requests under 500ms
+      rolling_period: "30d"
+      service_level_indicator:
+        request_based:
+          distribution_cut:
+            distribution_filter: "metric.type=\"run.googleapis.com/request_latencies\""
+            range:
+              max: 0.5  # 500ms
+    
+    ml_inference_latency:
+      display_name: "ML Inference Latency SLO"
+      goal: 0.95  # 95% of inferences under 100ms
+      rolling_period: "7d"
+      service_level_indicator:
+        request_based:
+          distribution_cut:
+            distribution_filter: "metric.type=\"custom.googleapis.com/ml_inference_time\""
+            range:
+              max: 0.1  # 100ms
+
+  # Alert Policies
+  alert_policies:
+    high_error_rate:
+      display_name: "High Error Rate Alert"
+      conditions:
+        - display_name: "Error rate > 5%"
+          condition_threshold:
+            filter: "resource.type=\"cloud_run_revision\""
+            aggregations:
+              - alignment_period: "300s"
+                per_series_aligner: "ALIGN_RATE"
+                cross_series_reducer: "REDUCE_MEAN"
+            comparison: "COMPARISON_GREATER_THAN"
+            threshold_value: 0.05
+            duration: "300s"
+      
+      notification_channels:
+        - "projects/${PROJECT_ID}/notificationChannels/${SLACK_CHANNEL_ID}"
+        - "projects/${PROJECT_ID}/notificationChannels/${EMAIL_CHANNEL_ID}"
+      
+      alert_strategy:
+        auto_close: "1800s"  # 30 minutes
+    
+    high_latency:
+      display_name: "High API Latency Alert"
+      conditions:
+        - display_name: "95th percentile latency > 1s"
+          condition_threshold:
+            filter: "metric.type=\"run.googleapis.com/request_latencies\""
+            aggregations:
+              - alignment_period: "300s"
+                per_series_aligner: "ALIGN_DELTA"
+                cross_series_reducer: "REDUCE_PERCENTILE_95"
+            comparison: "COMPARISON_GREATER_THAN"
+            threshold_value: 1.0
+            duration: "600s"
+      
+      notification_channels:
+        - "projects/${PROJECT_ID}/notificationChannels/${SLACK_CHANNEL_ID}"
+    
+    low_availability:
+      display_name: "Low Service Availability Alert"
+      conditions:
+        - display_name: "Availability < 99%"
+          condition_threshold:
+            filter: "select_slo_health(\"${SLO_ID}\")"
+            comparison: "COMPARISON_LESS_THAN"
+            threshold_value: 0.99
+            duration: "300s"
+      
+      notification_channels:
+        - "projects/${PROJECT_ID}/notificationChannels/${SLACK_CHANNEL_ID}"
+        - "projects/${PROJECT_ID}/notificationChannels/${EMAIL_CHANNEL_ID}"
+        - "projects/${PROJECT_ID}/notificationChannels/${PAGER_DUTY_ID}"
+    
+    ml_model_degradation:
+      display_name: "ML Model Performance Degradation"
+      conditions:
+        - display_name: "Recommendation accuracy < 80%"
+          condition_threshold:
+            filter: "metric.type=\"custom.googleapis.com/recommendation_accuracy\""
+            aggregations:
+              - alignment_period: "300s"
+                per_series_aligner: "ALIGN_MEAN"
+            comparison: "COMPARISON_LESS_THAN"
+            threshold_value: 0.8
+            duration: "900s"  # 15 minutes
+      
+      notification_channels:
+        - "projects/${PROJECT_ID}/notificationChannels/${ML_TEAM_CHANNEL_ID}"
+    
+    resource_exhaustion:
+      display_name: "Resource Exhaustion Alert"
+      conditions:
+        - display_name: "CPU utilization > 80%"
+          condition_threshold:
+            filter: "resource.type=\"cloud_run_revision\" AND metric.type=\"run.googleapis.com/container/cpu/utilizations\""
+            aggregations:
+              - alignment_period: "300s"
+                per_series_aligner: "ALIGN_MEAN"
+            comparison: "COMPARISON_GREATER_THAN"
+            threshold_value: 0.8
+            duration: "600s"
+        
+        - display_name: "Memory utilization > 85%"
+          condition_threshold:
+            filter: "resource.type=\"cloud_run_revision\" AND metric.type=\"run.googleapis.com/container/memory/utilizations\""
+            aggregations:
+              - alignment_period: "300s"
+                per_series_aligner: "ALIGN_MEAN"
+            comparison: "COMPARISON_GREATER_THAN"
+            threshold_value: 0.85
+            duration: "600s"
+      
+      notification_channels:
+        - "projects/${PROJECT_ID}/notificationChannels/${DEVOPS_CHANNEL_ID}"
+
+  # Dashboards
+  dashboards:
+    main_dashboard:
+      display_name: "PodcastFlow Analytics - Production Overview"
+      grid_layout:
+        widgets:
+          - title: "API Request Rate"
+            xy_chart:
+              data_sets:
+                - time_series_query:
+                    time_series_filter:
+                      filter: "resource.type=\"cloud_run_revision\""
+                      aggregation:
+                        alignment_period: "60s"
+                        per_series_aligner: "ALIGN_RATE"
+          
+          - title: "API Response Times"
+            xy_chart:
+              data_sets:
+                - time_series_query:
+                    time_series_filter:
+                      filter: "metric.type=\"run.googleapis.com/request_latencies\""
+                      aggregation:
+                        alignment_period: "60s"
+                        per_series_aligner: "ALIGN_DELTA"
+                        cross_series_reducer: "REDUCE_PERCENTILE_95"
+          
+          - title: "Error Rate"
+            xy_chart:
+              data_sets:
+                - time_series_query:
+                    time_series_filter:
+                      filter: "resource.type=\"cloud_run_revision\" AND metric.label.response_code_class=\"5xx\""
+                      aggregation:
+                        alignment_period: "300s"
+                        per_series_aligner: "ALIGN_RATE"
+          
+          - title: "Active Users"
+            xy_chart:
+              data_sets:
+                - time_series_query:
+                    time_series_filter:
+                      filter: "metric.type=\"custom.googleapis.com/active_users\""
+                      aggregation:
+                        alignment_period: "300s"
+                        per_series_aligner: "ALIGN_MEAN"
+          
+          - title: "ML Model Performance"
+            xy_chart:
+              data_sets:
+                - time_series_query:
+                    time_series_filter:
+                      filter: "metric.type=\"custom.googleapis.com/ml_inference_time\""
+                      aggregation:
+                        alignment_period: "300s"
+                        per_series_aligner: "ALIGN_MEAN"
+                - time_series_query:
+                    time_series_filter:
+                      filter: "metric.type=\"custom.googleapis.com/recommendation_accuracy\""
+                      aggregation:
+                        alignment_period: "300s"
+                        per_series_aligner: "ALIGN_MEAN"
+          
+          - title: "Database Performance"
+            xy_chart:
+              data_sets:
+                - time_series_query:
+                    time_series_filter:
+                      filter: "metric.type=\"custom.googleapis.com/database_query_time\""
+                      aggregation:
+                        alignment_period: "300s"
+                        per_series_aligner: "ALIGN_MEAN"
+          
+          - title: "Resource Utilization"
+            xy_chart:
+              data_sets:
+                - time_series_query:
+                    time_series_filter:
+                      filter: "resource.type=\"cloud_run_revision\" AND metric.type=\"run.googleapis.com/container/cpu/utilizations\""
+                      aggregation:
+                        alignment_period: "300s"
+                        per_series_aligner: "ALIGN_MEAN"
+                - time_series_query:
+                    time_series_filter:
+                      filter: "resource.type=\"cloud_run_revision\" AND metric.type=\"run.googleapis.com/container/memory/utilizations\""
+                      aggregation:
+                        alignment_period: "300s"
+                        per_series_aligner: "ALIGN_MEAN"
+
+    ml_dashboard:
+      display_name: "PodcastFlow Analytics - ML Metrics"
+      grid_layout:
+        widgets:
+          - title: "Recommendation Engine Performance"
+            xy_chart:
+              data_sets:
+                - time_series_query:
+                    time_series_filter:
+                      filter: "metric.type=\"custom.googleapis.com/recommendation_accuracy\""
+          
+          - title: "Prediction Model Accuracy"
+            xy_chart:
+              data_sets:
+                - time_series_query:
+                    time_series_filter:
+                      filter: "metric.type=\"custom.googleapis.com/prediction_accuracy\""
+          
+          - title: "User Segmentation Quality"
+            xy_chart:
+              data_sets:
+                - time_series_query:
+                    time_series_filter:
+                      filter: "metric.type=\"custom.googleapis.com/segmentation_silhouette_score\""
+          
+          - title: "Feature Store Performance"
+            xy_chart:
+              data_sets:
+                - time_series_query:
+                    time_series_filter:
+                      filter: "metric.type=\"custom.googleapis.com/feature_retrieval_time\""
+
+# Notification Channels
+notification_channels:
+  slack:
+    type: "slack"
+    display_name: "DevOps Slack Channel"
+    labels:
+      channel_name: "#alerts"
+      url: "${SLACK_WEBHOOK_URL}"
+  
+  email:
+    type: "email"
+    display_name: "DevOps Email"
+    labels:
+      email_address: "devops@podcastflow.com"
+  
+  pagerduty:
+    type: "pagerduty"
+    display_name: "PagerDuty Escalation"
+    labels:
+      service_key: "${PAGERDUTY_SERVICE_KEY}"
+
+# Log-based Metrics
+log_metrics:
+  error_log_count:
+    name: "error_log_count"
+    description: "Count of error logs"
+    filter: "severity >= ERROR"
+    metric_descriptor:
+      metric_kind: "GAUGE"
+      value_type: "INT64"
+  
+  security_event_count:
+    name: "security_event_count"
+    description: "Count of security-related events"
+    filter: "jsonPayload.event_type=\"security_violation\""
+    metric_descriptor:
+      metric_kind: "GAUGE"
+      value_type: "INT64"
+  
+  ml_training_events:
+    name: "ml_training_events"
+    description: "ML model training events"
+    filter: "jsonPayload.component=\"ml_training\""
+    metric_descriptor:
+      metric_kind: "GAUGE"
+      value_type: "INT64"
+
+# Uptime Checks
+uptime_checks:
+  api_health:
+    display_name: "API Health Check"
+    monitored_resource:
+      type: "uptime_url"
+      labels:
+        project_id: "${PROJECT_ID}"
+        host: "${API_ENDPOINT}"
+    http_check:
+      path: "/api/v1/health"
+      port: 443
+      use_ssl: true
+      validate_ssl: true
+    period: "60s"
+    timeout: "10s"
+    content_matchers:
+      - content: "healthy"
+        matcher: "CONTAINS_STRING"
+  
+  dashboard_health:
+    display_name: "Dashboard Health Check"
+    monitored_resource:
+      type: "uptime_url"
+      labels:
+        project_id: "${PROJECT_ID}"
+        host: "${DASHBOARD_ENDPOINT}"
+    http_check:
+      path: "/health"
+      port: 443
+      use_ssl: true
+      validate_ssl: true
+    period: "60s"
+    timeout: "10s"
+    content_matchers:
+      - content: "OK"
+        matcher: "CONTAINS_STRING"
+
+# Error Reporting Configuration
+error_reporting:
+  enabled: true
+  service_name: "podcastflow-analytics"
+  service_version: "3.0.0"
+  report_exceptions: true
+  
+# Trace Configuration
+tracing:
+  enabled: true
+  sampling_rate: 0.1  # 10% sampling
+  service_name: "podcastflow-analytics"
+  
+# Profiler Configuration
+profiler:
+  enabled: true
+  service_name: "podcastflow-analytics"
+  service_version: "3.0.0"
+  debug_logging: false 

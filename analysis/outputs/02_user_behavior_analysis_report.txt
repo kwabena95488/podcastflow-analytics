@@ -1,0 +1,161 @@
+🎧 PodcastFlow Analytics - User Behavior Analysis
+Generated: 2025-05-30 04:16:19
+============================================================
+
+📊 USER ENGAGEMENT METRICS
+===========================
+
+Top 10 Most Active Users
+========================
+user_id | total_events | unique_episodes | avg_completion | max_completion | min_completion | platforms_used | device_types_used
+--------------------------------------------------------------------------------------------------------------------------------
+user_013 | 9 | 4 | 38.406666666666666 | 88.14 | 12.34 | 3 | 2
+user_016 | 9 | 5 | 52.50777777777778 | 77.25 | 12.17 | 3 | 2
+user_018 | 9 | 4 | 66.52888888888889 | 90.8 | 23.94 | 3 | 2
+user_008 | 7 | 4 | 66.1542857142857 | 87.74 | 35.64 | 3 | 2
+user_012 | 7 | 5 | 48.621428571428574 | 91.69 | 11.73 | 3 | 2
+user_020 | 7 | 4 | 46.228571428571435 | 93.57 | 15.69 | 3 | 2
+user_001 | 6 | 4 | 51.650000000000006 | 83.16 | 10.01 | 3 | 2
+user_006 | 6 | 3 | 52.68166666666665 | 92.43 | 17.34 | 3 | 2
+user_015 | 6 | 3 | 40.58833333333334 | 71.76 | 13.31 | 3 | 2
+user_003 | 5 | 3 | 51.55 | 89.02 | 18.07 | 3 | 2
+
+Total rows: 10
+
+User Engagement Segmentation
+============================
+engagement_segment | user_count | avg_events_per_user | avg_completion_rate
+---------------------------------------------------------------------------
+Medium Engagement | 12 | 4.916666666666667 | 59.77369047619047
+Low Engagement | 6 | 5.666666666666667 | 41.46208333333333
+Very Low Engagement | 2 | 3.5 | 27.156666666666666
+
+Total rows: 3
+
+🕐 LISTENING PATTERNS ANALYSIS
+==============================
+
+Completion Rates by Event Type
+==============================
+event_type | event_count | avg_completion | min_completion | max_completion | completion_stddev
+-----------------------------------------------------------------------------------------------
+play | 100 | 50.93090000000004 | 10.01 | 93.57 | 26.512784379341497
+
+Total rows: 1
+
+Platform Usage and Engagement
+=============================
+platform | unique_users | total_events | avg_completion | events_per_user
+-------------------------------------------------------------------------
+spotify | 17 | 32 | 50.635625000000005 | 1.8823529411764706
+apple_podcasts | 16 | 30 | 49.408 | 1.875
+google_podcasts | 16 | 38 | 52.38184210526315 | 2.375
+
+Total rows: 3
+
+Device Usage Patterns
+=====================
+device_type | unique_users | total_events | avg_completion | high_completion_events
+-----------------------------------------------------------------------------------
+mobile | 19 | 53 | 45.9598113207547 | 8
+desktop | 17 | 47 | 56.53659574468087 | 12
+
+Total rows: 2
+
+🎯 CONTENT PREFERENCE ANALYSIS
+===============================
+
+Most Popular Episodes
+=====================
+episode_id | total_listens | unique_listeners | avg_completion | complete_listens
+---------------------------------------------------------------------------------
+ep_tech_05 | 25 | 14 | 51.425999999999995 | 1
+ep_tech_03 | 23 | 13 | 51.77086956521738 | 2
+ep_tech_04 | 19 | 12 | 51.73894736842105 | 0
+ep_tech_01 | 17 | 12 | 53.06235294117647 | 4
+ep_tech_02 | 16 | 12 | 45.725625 | 0
+
+Total rows: 5
+
+Users with Highest Content Diversity
+====================================
+user_id | unique_episodes | total_events | diversity_ratio
+----------------------------------------------------------
+user_005 | 3 | 3 | 1
+user_009 | 3 | 3 | 1
+user_011 | 3 | 3 | 1
+user_019 | 3 | 3 | 1
+user_007 | 3 | 4 | 0.75
+user_014 | 3 | 4 | 0.75
+user_012 | 5 | 7 | 0.7142857142857143
+user_001 | 4 | 6 | 0.6666666666666666
+user_004 | 2 | 3 | 0.6666666666666666
+user_010 | 2 | 3 | 0.6666666666666666
+
+Total rows: 10
+
+🧠 BEHAVIORAL INSIGHTS
+======================
+
+Listening Behavior Distribution
+===============================
+listening_behavior | event_count | unique_users | avg_completion_in_range
+-------------------------------------------------------------------------
+Early Skip (10-25%) | 24 | 14 | 16.442499999999995
+Mid Skip (25-50%) | 27 | 15 | 38.29592592592593
+Late Skip (50-75%) | 25 | 14 | 64.5436
+Near Complete (75-90%) | 17 | 12 | 82.93705882352941
+Complete (90%+) | 7 | 5 | 91.5657142857143
+
+Total rows: 5
+
+User Classification by Behavior
+===============================
+user_id | total_events | unique_episodes | platforms_used | avg_completion | user_type
+--------------------------------------------------------------------------------------
+user_018 | 9 | 4 | 3 | 66.52888888888889 | Power User
+user_016 | 9 | 5 | 3 | 52.50777777777778 | Active User
+user_013 | 9 | 4 | 3 | 38.406666666666666 | Active User
+user_008 | 7 | 4 | 3 | 66.1542857142857 | Power User
+user_012 | 7 | 5 | 3 | 48.621428571428574 | Active User
+user_020 | 7 | 4 | 3 | 46.228571428571435 | Active User
+user_006 | 6 | 3 | 3 | 52.68166666666665 | Active User
+user_001 | 6 | 4 | 3 | 51.650000000000006 | Active User
+user_015 | 6 | 3 | 3 | 40.58833333333334 | Active User
+user_003 | 5 | 3 | 3 | 51.55 | Active User
+user_014 | 4 | 3 | 2 | 34.3175 | Active User
+user_007 | 4 | 3 | 2 | 29.84 | Active User
+user_011 | 3 | 3 | 3 | 65.78666666666668 | Active User
+user_005 | 3 | 3 | 1 | 64.12 | Active User
+user_010 | 3 | 2 | 3 | 58.31333333333333 | Active User
+user_009 | 3 | 3 | 2 | 55.779999999999994 | Active User
+user_004 | 3 | 2 | 2 | 54.71666666666667 | Active User
+user_019 | 3 | 3 | 2 | 24.473333333333333 | Active User
+user_002 | 2 | 1 | 1 | 77.495 | Active User
+user_017 | 1 | 1 | 1 | 40.61 | Casual User
+
+Total rows: 20
+
+📋 BEHAVIORAL ANALYSIS SUMMARY
+==============================
+
+Key Behavioral Insights:
+• User engagement varies significantly across the user base
+• Platform choice influences completion rates
+• Device type affects listening behavior patterns
+• Content diversity indicates user preferences
+• Skip patterns reveal content quality indicators
+
+Segmentation Findings:
+• Users can be classified into distinct engagement tiers
+• Power users show consistent high completion rates
+• Platform loyalty varies among user segments
+• Device preferences correlate with engagement levels
+
+Recommendations for Content Strategy:
+• Focus on content that drives high completion rates
+• Optimize for platforms with highest engagement
+• Consider device-specific content optimization
+• Develop retention strategies for different user segments
+• Monitor skip patterns to improve content quality
+

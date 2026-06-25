@@ -1,0 +1,145 @@
+name: 'podcast_analytics'
+version: '1.0.0'
+config-version: 2
+
+# This setting configures which "profile" dbt uses for this project.
+profile: 'podcastflow_analytics'
+
+# These configurations specify where dbt should look for different types of files.
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+target-path: "target"  # directory which will store compiled SQL files
+clean-targets:         # directories to be removed by `dbt clean`
+  - "target"
+  - "dbt_packages"
+
+# Configuring models
+models:
+  podcast_analytics:
+    # Configuration for staging models (Bronze -> Silver)
+    staging:
+      +materialized: view
+      +schema: silver
+      spotify:
+        +tags: ["staging", "spotify", "api"]
+      apple:
+        +tags: ["staging", "apple", "api"]
+      rss:
+        +tags: ["staging", "rss", "feeds"]
+      events:
+        +tags: ["staging", "events", "streaming"]
+    
+    # Configuration for intermediate models (Silver processing)
+    intermediate:
+      +materialized: view
+      +schema: silver
+      +tags: ["intermediate"]
+    
+    # Configuration for marts (Gold layer)
+    marts:
+      +materialized: table
+      +schema: gold
+      
+      # Core business entities
+      core:
+        +tags: ["marts", "core", "dimensions", "facts"]
+        +post-hook: "{{ optimize_table() }}"
+      
+      # Analytics and aggregations
+      analytics:
+        +tags: ["marts", "analytics", "aggregations"]
+        +materialized: table
+        +post-hook: "{{ optimize_table() }}"
+
+# Configuring snapshots for SCD Type 2
+snapshots:
+  podcast_analytics:
+    +target_schema: gold
+    +strategy: check
+    +check_cols: all
+    +tags: ["snapshots", "scd"]
+
+# Configuring seeds
+seeds:
+  podcast_analytics:
+    +schema: bronze
+    +tags: ["seeds", "reference_data"]
+    podcast_categories:
+      +column_types:
+        category_id: varchar(50)
+        category_name: varchar(100)
+        parent_category: varchar(50)
+    platform_weights:
+      +column_types:
+        platform_name: varchar(50)
+        weight_factor: decimal(3,2)
+
+# Configuring tests
+tests:
+  +store_failures: true
+  +schema: dbt_artifacts
+
+# Variables for the project
+vars:
+  # Date range for incremental models
+  start_date: '2024-01-01'
+  
+  # Timezone for timestamp conversions
+  timezone: 'UTC'
+  
+  # Data quality thresholds
+  max_null_percentage: 0.05
+  min_row_count: 100
+  
+  # API rate limiting
+  spotify_rate_limit: 100
+  apple_rate_limit: 20
+  
+  # Streaming configuration
+  kafka_bootstrap_servers: 'kafka:29092'
+  schema_registry_url: 'http://schema-registry:8081'
+  
+  # Delta Lake configuration
+  delta_lake_path: 's3a://podcastflow/delta-lake'
+  
+  # Feature flags
+  enable_guest_network_analysis: true
+  enable_content_intelligence: true
+  enable_real_time_metrics: true
+
+# Documentation configuration
+docs:
+  generate: true
+  
+# Macro configuration
+dispatch:
+  - macro_namespace: dbt_utils
+    search_order: ['podcast_analytics', 'dbt_utils']
+
+# Quoting configuration for different databases
+quoting:
+  database: false
+  schema: false
+  identifier: false
+
+# Hooks that run at the beginning and end of dbt runs
+on-run-start:
+  - "{{ log('Starting dbt run for PodcastFlow Analytics', info=true) }}"
+  - "{{ create_udfs() }}"
+
+on-run-end:
+  - "{{ log('Completed dbt run for PodcastFlow Analytics', info=true) }}"
+  - "{{ update_data_lineage() }}"
+
+# Freshness configuration
+sources:
+  podcast_analytics:
+    freshness:
+      warn_after: {count: 6, period: hour}
+      error_after: {count: 12, period: hour}
+    loaded_at_field: updated_at 

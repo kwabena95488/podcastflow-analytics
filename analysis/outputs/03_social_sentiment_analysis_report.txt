@@ -1,0 +1,194 @@
+🎧 PodcastFlow Analytics - Social Sentiment Analysis
+Generated: 2025-05-30 04:16:19
+============================================================
+
+📊 SENTIMENT OVERVIEW
+=====================
+
+Overall Sentiment Statistics
+============================
+total_mentions | avg_sentiment | min_sentiment | max_sentiment | sentiment_stddev | very_positive | positive | neutral | negative
+---------------------------------------------------------------------------------------------------------------------------------
+40 | 0.777725 | 0.602 | 0.893 | 0.09165290922404357 | 20 | 20 | 0 | 0
+
+Total rows: 1
+
+Sentiment by Social Platform
+============================
+platform | mention_count | avg_sentiment | min_sentiment | max_sentiment | positive_mentions
+--------------------------------------------------------------------------------------------
+reddit | 19 | 0.8092631578947369 | 0.609 | 0.893 | 18
+twitter | 5 | 0.7494 | 0.63 | 0.864 | 4
+linkedin | 16 | 0.7491249999999999 | 0.602 | 0.888 | 10
+
+Total rows: 3
+
+🎯 PODCAST SENTIMENT ANALYSIS
+=============================
+
+Sentiment Analysis by Podcast
+=============================
+podcast_id | mention_count | avg_sentiment | min_sentiment | max_sentiment | sentiment_variance | very_positive_count | negative_count
+--------------------------------------------------------------------------------------------------------------------------------------
+tech_talk_podcast | 40 | 0.777725 | 0.602 | 0.893 | 0.09165290922404357 | 20 | 0
+
+Total rows: 1
+
+Most Positive and Negative Mentions
+===================================
+mention_type | podcast_id | platform | sentiment_score | mention_text | follower_count
+--------------------------------------------------------------------------------------
+Most Positive | tech_talk_podcast | reddit | 0.893 | Great podcast episode! Really enjoyed it. | 1562
+Most Positive | tech_talk_podcast | linkedin | 0.888 | Great podcast episode! Really enjoyed it. | 3034
+Most Positive | tech_talk_podcast | reddit | 0.887 | Great podcast episode! Really enjoyed it. | 2141
+Most Negative | tech_talk_podcast | reddit | 0.609 | Great podcast episode! Really enjoyed it. | 2081
+Most Negative | tech_talk_podcast | linkedin | 0.607 | Great podcast episode! Really enjoyed it. | 2917
+Most Negative | tech_talk_podcast | linkedin | 0.602 | Great podcast episode! Really enjoyed it. | 3589
+
+Total rows: 6
+
+📈 INFLUENCER AND REACH ANALYSIS
+=================================
+
+Mentions by Influence Tier
+==========================
+influence_tier | mention_count | avg_sentiment | total_reach | avg_followers
+----------------------------------------------------------------------------
+Medium Influence (1K-5K) | 33 | 0.7815757575757576 | 95353 | 2889.4848484848485
+Low Influence (500-1K) | 2 | 0.746 | 1475 | 737.5
+Micro Influence (<500) | 5 | 0.7649999999999999 | 1165 | 233
+
+Total rows: 3
+
+Top 10 Mentions by Follower Reach
+=================================
+mention_id | podcast_id | platform | follower_count | sentiment_score | mention_text
+------------------------------------------------------------------------------------
+mention_0003 | tech_talk_podcast | reddit | 4940 | 0.761 | Great podcast episode! Really enjoyed it.
+mention_0007 | tech_talk_podcast | twitter | 4836 | 0.727 | Great podcast episode! Really enjoyed it.
+mention_0008 | tech_talk_podcast | reddit | 4702 | 0.823 | Great podcast episode! Really enjoyed it.
+mention_0007 | tech_talk_podcast | linkedin | 4632 | 0.851 | Great podcast episode! Really enjoyed it.
+mention_0001 | tech_talk_podcast | linkedin | 4579 | 0.728 | Great podcast episode! Really enjoyed it.
+mention_0014 | tech_talk_podcast | twitter | 4332 | 0.63 | Great podcast episode! Really enjoyed it.
+mention_0003 | tech_talk_podcast | reddit | 4269 | 0.84 | Great podcast episode! Really enjoyed it.
+mention_0005 | tech_talk_podcast | linkedin | 3791 | 0.832 | Great podcast episode! Really enjoyed it.
+mention_0016 | tech_talk_podcast | reddit | 3785 | 0.862 | Great podcast episode! Really enjoyed it.
+mention_0019 | tech_talk_podcast | linkedin | 3589 | 0.602 | Great podcast episode! Really enjoyed it.
+
+Total rows: 10
+
+Sentiment vs Follower Reach Analysis
+====================================
+sentiment_category | mention_count | avg_reach | total_potential_reach | min_reach | max_reach
+----------------------------------------------------------------------------------------------
+Positive | 20 | 2532.9 | 50658 | 107 | 4940
+Very Positive | 20 | 2366.75 | 47335 | 117 | 4702
+
+Total rows: 2
+
+⏰ TEMPORAL SENTIMENT PATTERNS
+==============================
+
+Daily Mention and Sentiment Trends
+==================================
+mention_date | daily_mentions | daily_avg_sentiment | daily_total_reach
+-----------------------------------------------------------------------
+2025-05-30 | 1 | 0.851 | 1159
+2025-05-29 | 4 | 0.8005 | 11503
+2025-05-28 | 4 | 0.74775 | 7330
+2025-05-27 | 8 | 0.746125 | 19895
+2025-05-26 | 4 | 0.8300000000000001 | 11618
+2025-05-25 | 9 | 0.7714444444444444 | 22807
+2025-05-24 | 7 | 0.7859999999999999 | 16190
+2025-05-23 | 3 | 0.777 | 7491
+
+Total rows: 8
+
+Platform Activity by Hour
+=========================
+platform | mention_hour | hourly_mentions | hourly_avg_sentiment
+----------------------------------------------------------------
+linkedin | 1 | 1 | 0.622
+linkedin | 2 | 4 | 0.72025
+linkedin | 3 | 1 | 0.851
+linkedin | 9 | 1 | 0.627
+linkedin | 12 | 2 | 0.844
+linkedin | 13 | 1 | 0.742
+linkedin | 15 | 2 | 0.8474999999999999
+linkedin | 16 | 1 | 0.602
+linkedin | 17 | 1 | 0.888
+linkedin | 20 | 1 | 0.731
+linkedin | 21 | 1 | 0.659
+reddit | 1 | 2 | 0.753
+reddit | 3 | 1 | 0.84
+reddit | 4 | 1 | 0.745
+reddit | 6 | 1 | 0.823
+reddit | 7 | 1 | 0.871
+reddit | 8 | 2 | 0.8225
+reddit | 10 | 1 | 0.887
+reddit | 13 | 3 | 0.7520000000000001
+reddit | 14 | 1 | 0.867
+reddit | 16 | 1 | 0.893
+reddit | 18 | 1 | 0.865
+reddit | 22 | 2 | 0.8215
+reddit | 23 | 2 | 0.7675000000000001
+twitter | 10 | 1 | 0.864
+twitter | 12 | 1 | 0.63
+twitter | 14 | 1 | 0.818
+twitter | 18 | 1 | 0.727
+twitter | 22 | 1 | 0.708
+
+Total rows: 29
+
+🔗 SENTIMENT-LISTENING CORRELATION
+===================================
+
+Podcast Performance: Episodes vs Social Mentions
+================================================
+podcast_title | episode_count | total_mentions | avg_sentiment | total_social_reach
+-----------------------------------------------------------------------------------
+Tech Talk Podcast | 25 | 80 | 0.7777249999999999 | 195986
+Business Insights | 18 | 0 | None | None
+Data Science Deep Dive | 12 | 0 | None | None
+Startup Stories | 15 | 0 | None | None
+
+Total rows: 4
+
+Episode Count vs Sentiment Correlation
+======================================
+episode_tier | mention_count | avg_sentiment | avg_episodes
+-----------------------------------------------------------
+High Episode Count (20+) | 80 | 0.7777249999999999 | 25
+
+Total rows: 1
+
+💡 SOCIAL SENTIMENT INSIGHTS
+============================
+
+Key Sentiment Findings:
+• Overall sentiment is predominantly positive across all platforms
+• Different social platforms show varying sentiment patterns
+• High-follower accounts tend to have more moderate sentiment scores
+• Podcast performance correlates with social mention volume
+• Established podcasts (more episodes) receive more social engagement
+
+Platform-Specific Observations:
+• Each platform has distinct sentiment characteristics
+• Timing patterns vary by platform and audience behavior
+• Influencer impact varies significantly by follower count
+• Platform choice affects both reach and sentiment quality
+
+Strategic Recommendations:
+• Focus social media efforts on platforms with highest positive sentiment
+• Engage with high-follower accounts for maximum reach impact
+• Monitor sentiment trends to identify content quality issues early
+• Leverage timing patterns for optimal social media posting
+• Develop platform-specific content strategies based on sentiment patterns
+• Use social sentiment as an early indicator of podcast performance
+
+Risk Mitigation:
+• Implement sentiment monitoring for early negative trend detection
+• Develop response strategies for different sentiment scenarios
+• Track sentiment correlation with listening behavior changes
+• Monitor competitor sentiment for market positioning insights
+

@@ -1,0 +1,60 @@
+podcastflow_analytics:
+  target: bigquery_dev  # Default to cloud development for this setup
+  outputs:
+    
+    # Local BigQuery Emulator for development
+    emulator:
+      type: bigquery
+      method: http
+      project: podcastflow-analytics
+      dataset: gold  # Default dataset
+      location: US
+      host: http://bigquery-emulator:9050
+      threads: 4
+      timeout_seconds: 300
+      priority: interactive
+      # No authentication needed for emulator
+      
+    # Cloud BigQuery Development Environment (FREE TIER OPTIMIZED)
+    bigquery_dev:
+      type: bigquery
+      method: service-account
+      project: "{{ env_var('GCP_PROJECT_ID') }}"
+      dataset: gold
+      location: US
+      keyfile: "{{ env_var('GOOGLE_APPLICATION_CREDENTIALS') }}"
+      threads: 2  # Reduced for free tier
+      timeout_seconds: 300
+      maximum_bytes_billed: 100000000  # 100MB limit (very conservative for free tier)
+      priority: interactive
+      # Free tier optimizations
+      job_creation_timeout_seconds: 300
+      job_execution_timeout_seconds: 600
+      
+    # Cloud BigQuery Production Environment (FREE TIER OPTIMIZED)
+    bigquery_prod:
+      type: bigquery
+      method: service-account
+      project: "{{ env_var('GCP_PROJECT_ID') }}"
+      dataset: gold
+      location: US
+      keyfile: "{{ env_var('GOOGLE_APPLICATION_CREDENTIALS') }}"
+      threads: 2  # Reduced for free tier
+      timeout_seconds: 600
+      maximum_bytes_billed: 500000000  # 500MB limit for production within free tier
+      priority: batch
+      # Free tier optimizations
+      job_creation_timeout_seconds: 300
+      job_execution_timeout_seconds: 1200
+      
+    # Cloud BigQuery with OAuth (for interactive development - FREE TIER)
+    bigquery_oauth:
+      type: bigquery
+      method: oauth
+      project: "{{ env_var('GCP_PROJECT_ID') }}"
+      dataset: gold
+      location: US
+      threads: 2  # Reduced for free tier
+      timeout_seconds: 300
+      maximum_bytes_billed: 50000000  # 50MB limit for interactive queries
+      priority: interactive 
